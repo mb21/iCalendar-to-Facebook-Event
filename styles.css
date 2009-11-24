@@ -1,0 +1,120 @@
+.box{
+	float:left;
+	width: 50%;
+	padding: 0 0 1em 0;
+}
+.textfield{
+	float:left;
+	width: 7em;
+}
+.categories{
+	width: 12em;
+	float: left;
+}
+.cats{
+	padding: .5em 0;
+	width: 8em;
+	float: left;
+}
+.subcats{
+	padding: .5em 0;
+	width: 12em;
+	float: left;
+}
+#fields{
+	border: solid 1px #3B5998;
+	display: inline-block;
+	padding: .5em 2em;
+}
+#catlistlink{
+	float:left;
+}
+#catlist{
+	position:absolute;
+	z-index: 1;
+	border: solid 1px grey;
+	padding: .2em 1em;
+	background-color: white;
+	right: 0.5em;
+	top: 12em;
+}
+#groupid{
+	clear:both;
+	padding: .2em 0 0 0;
+}
+.inputs{
+	padding: .5em 0;
+}
+#subscribe{
+	padding-top: 1.5em;
+}
+
+
+/* Dialogs */
+.dialog{
+	width: 550px;
+	position:absolute;
+	z-index: 2;
+	border: solid 1px #3B5998;
+	left: 105px;
+	top: 100px;
+}
+.dialog_head{
+	background-color: #6D84B4;
+	padding: .5em 1em;
+}
+.dialog_head_text{
+	color:#FFFFFF;
+	font-weight:bold;
+}
+.dialog_body{
+	background-color: white;
+	padding: .5em 1em;
+}
+.dialog_button_area{
+	background-color: #F2F2F2;
+	padding: .8em;
+	height: 20px;
+}
+.dialog_buttons{
+	background-color: #3B5998;
+	border-style:solid;
+	border-width:1px;
+	color:#FFFFFF;
+	font-size:11px;
+	padding:2px 15px 3px;
+	text-align:center;
+	float: right;
+}
+
+
+
+#subscription_table{
+	width: 100%;
+	margin: 2em 0;
+}
+.table_heading{
+	font-weight: bold;
+	line-height: 3em;
+}
+.subs_row{
+	border-top: solid;
+}
+.name{
+	width: 390px;
+}
+.tb_category{
+	width: 75px;
+}
+.tb_subcategory{
+	width: 95px;
+}
+.tb_group{
+	width: 100px;
+}
+.edit{
+	width: 50px;
+}
+.unsubscribe{
+	width: 50px;
+}
