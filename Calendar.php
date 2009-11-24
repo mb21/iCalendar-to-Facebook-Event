@@ -79,24 +79,29 @@ class Calendar
 			if (mysql_num_rows($result) == 0){
 				//event doesn't exist yet, add it
 				
-				if($numb_events > 19){
+				if($numb_events > $config['number_of_events_threshold']){
 					//to not overstretch the facebook limits, add the other events later..
 					print('<fb:redirect url="'._SITE_URL.'?msg&wait='.$numb_events.'"/>');
 					exit;
 				}
 				
-				//create facebook-event
+				//new event
 				$event_obj = new Event($event,$this);
-				$event_id = $event_obj->post_to_fb();
 				
-				//get rid of all ' for mysql
-				$summary = str_replace("'","\'", $event['SUMMARY']);
+				if ($event_obj->get_start_time() > strtotime($config['old_event_threshold'])){
+					//if event is older than a month, do not add it
 
-				mysql_query("INSERT INTO user$user_id (event_id, UID, summary, from_url) VALUES ('$event_id', '$UID', '$summary','$url')") or trigger_error(mysql_error());
-				
-				$numb_events++;
+					//create facebook event
+					$event_id = $event_obj->post_to_fb();
+					
+					//get rid of all ' for mysql
+					$summary = str_replace("'","\'", $event['SUMMARY']);
+	
+					mysql_query("INSERT INTO user$user_id (event_id, UID, summary, from_url) VALUES ('$event_id', '$UID', '$summary','$url')") or trigger_error(mysql_error());
+					
+					$numb_events++;
+				}
 			}
-			//(else display events that are already in db?)
 		}
 		
 		return $numb_events;		

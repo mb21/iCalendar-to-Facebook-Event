@@ -69,6 +69,12 @@ class Event
     	}
     }
     
+	public function get_start_time(){
+		//returns the unix timestamp in facebooks weird time
+		$this->ensure_convert();
+		return $this->fbEvent['start_time'];
+	}
+    
     ///////////////////////////////
 	//PRIVATE METHODS
 	///////////////////////////////	

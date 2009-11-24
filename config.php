@@ -15,4 +15,16 @@ $host = 'localhost';
 $db_user = '';
 $db_password = '';
 
+
+
+////////////////////
+// config parameters
+////////////////////
+
+//do not add more than "number" events at the same time to not overstretch the facebook limits
+$config['number_of_events_threshold'] = 19; 
+
+//event is not added if it is older than now "-1 month"
+$config['old_event_threshold'] = "-1 month";
+
 ?>
