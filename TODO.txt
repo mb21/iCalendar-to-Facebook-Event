@@ -1,0 +1,5 @@
+
+* associate a picture with a subscription which then will be added to every event created
+* add URL from ical file with Events.edit
+* share events created with $facebook->api_client->stream_publish($message, $attachment, $action_links, NULL, $page_id);
+* redo user interface with AJAX. (error messages etc.)
