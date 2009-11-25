@@ -127,9 +127,10 @@ elseif (isset($_GET['unsub_remove'])){
 		$numb_events = 0;
 		while($row = mysql_fetch_array($result)){
 			//try to not over-do facebook...
-			if($numb_events > 10){
+			if($numb_events >= $config['number_of_events_threshold']){
 				$numb_events = 0;
-				sleep(3);
+				print('<fb:redirect url="'._SITE_URL.'limit_reached.php"/>');
+				sleep(5);
 			}
 			try{
 				$facebook->api_client->events_cancel($row['event_id']);

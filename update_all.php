@@ -49,11 +49,12 @@ while($row = mysql_fetch_assoc($result)){
 	echo "try ".$row['url']."<br>";
 	
 	try{
+		$numb_subs++;
+		
 		$calendar  = new Calendar($sub_data);
 		$newevs = $calendar->update();
 		
 		$numb_events = $numb_events + $newevs;
-		$numb_subs++;
 		
 		echo "done<br>";
 	}catch(Exception $e){

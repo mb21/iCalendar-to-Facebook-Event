@@ -65,6 +65,8 @@ class Calendar
 	
 	public function update(){
 		//updates all events in this calendar and returns number of new events created
+
+		global $config;
 		
 		$this->ensure_parse();
 		$user_id = $this->sub_data['user_id'];
@@ -79,10 +81,10 @@ class Calendar
 			if (mysql_num_rows($result) == 0){
 				//event doesn't exist yet, add it
 				
-				if($numb_events > $config['number_of_events_threshold']){
+				if($numb_events >= $config['number_of_events_threshold']){
 					//to not overstretch the facebook limits, add the other events later..
 					print('<fb:redirect url="'._SITE_URL.'?msg&wait='.$numb_events.'"/>');
-					exit;
+					throw new Exception("Numver of Events limit reached.");
 				}
 				
 				//new event
@@ -235,5 +237,49 @@ class Calendar
 			echo "ics file not valid";
 		}
 	}
+	
+	
+	/////////////////////////////////
+	// METHODS USED FOR TESTING ONLY
+	/////////////////////////////////
+	
+	/*
+	public function print_all_parsed(){
+		//echos all events in fbEvent format
+		$this->ensure_parse();
+		$i = 0;
+		foreach ($this->icsCalendar as $event) {
+			echo $i . "<br>";
+			$i++;
+			
+			$event_obj = new Event($event,$this);
+			$event_obj->ensure_convert();
+			print_r($event_obj->fbEvent);
+			
+			echo "<br><br>";
+		}
+	}
+	
+	public function do_on($event_numbers){
+		// this method is a sceleton which
+		// expects either string "all" or array of integers
+		
+		$this->ensure_parse();	
+		if ($event_numbers == "all"){
+			$event_numbers = range(0, count($this->icsCalendar));
+		}
+		
+		global $config;
+		
+		foreach ($event_numbers as $i){
+			$event_obj = new Event($this->icsCalendar[$i],$this);
+			$event_obj->ensure_convert();
+			
+			//insert test code here
+			
+		}
+	}
+	
+	*/
 }
 ?>

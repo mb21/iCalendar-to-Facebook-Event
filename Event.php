@@ -53,12 +53,16 @@ class Event
 			trigger_error($error);
 		}
 		
+		//print_r($this->fbEvent);
+		//echo "<br>";
+		
 		//post array to facebook
 		try{
 			$event_id=$facebook->api_client->events_create(json_encode($this->fbEvent));
 		}catch(Exception $e){
 			$error = $e->getMessage().' Error code:'.$e->getCode();
-			trigger_error($error);
+			//trigger_error($error);
+			echo $error;
 		}
 		return $event_id;
     }
