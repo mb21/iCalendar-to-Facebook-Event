@@ -62,7 +62,7 @@ class Event
 		}catch(Exception $e){
 			$error = $e->getMessage().' Error code:'.$e->getCode();
 			//trigger_error($error);
-			echo $error;
+			echo '<fb:error><fb:message>Couldn\'t create event. '.$error.'.</fb:message></fb:error>';
 		}
 		return $event_id;
     }

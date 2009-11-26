@@ -40,15 +40,15 @@ function __autoload($class_name) {
 }
 
 // CSS STYLESHEET
-echo '<head><link type="text/css" rel="stylesheet" href="'._HOST_URL.'styles.css"></head>';
+//echo '<head><link type="text/css" rel="stylesheet" href="'._HOST_URL.'styles.css"></head>';
 //for testing the following code circumvents facebook's css cache
-//echo "<head><style>";
-//echo htmlentities(file_get_contents('styles.css', true));
-//echo "</style></head>";
+echo "<head><style>";
+echo htmlentities(file_get_contents('styles.css', true));
+echo "</style></head>";
 
 
 //whether offline_access and create_event permissions are set
-$no_perms = !$facebook->api_client->users_hasAppPermission('offline_access') || !$facebook->api_client->users_hasAppPermission('create_event');
+$perms = $facebook->api_client->users_hasAppPermission('offline_access') && $facebook->api_client->users_hasAppPermission('create_event');
 
 //store session_key in db
 if (isset($_POST["fb_sig_session_key"]) && isset($_GET['fb_perms']) && $facebook->api_client->users_hasAppPermission('offline_access')){
@@ -60,55 +60,14 @@ if (isset($_POST["fb_sig_session_key"]) && isset($_GET['fb_perms']) && $facebook
 }
 
 
-
-/////////////////////////////////
-// PRINT USER ERRORS
-/////////////////////////////////
-
-if (isset($_GET['err'])){
-	if (isset($_GET['fb_perms']) && $no_perms){
-		echo '<fb:error><fb:message>For this app to be able to create events, you need to give it permission to do so. Please resubmit the form.</fb:message></fb:error>';
-	}
-	elseif (isset($_GET['url-not-correct'])){
-		echo '<fb:error><fb:message>URL doesn\'t have correct form. Please include http:// etc.</fb:message></fb:error>';
-	}
-	elseif (isset($_GET['file-not-valid'])){
-		echo '<fb:error><fb:message>File doesn\'t seem to be a valid <a href="http://en.wikipedia.org/wiki/ICalendar" target="_blank">iCalendar</a> file.</fb:message></fb:error>';
-	}
-	elseif (isset($_GET['file-no-event'])){
-		echo '<fb:error><fb:message>File doesn\'t seem to contain any events. Calendars that contain only free/busy information are not supported.</fb:message></fb:error>';
-	}
-	elseif (isset($_GET['create_event-error'])){
-		echo '<fb:error><fb:message>Couldn\'t create event. '.$_GET['create_event-error'].'.</fb:message></fb:error>';
-	}
-	elseif (isset($_GET['old-url'])){
-		echo '<fb:error><fb:message>You are already subscribed to this URL.</fb:message></fb:error>';
-	}
-	elseif (isset($_GET['no_sub_name'])){
-		echo '<fb:error><fb:message>You need to give your subscription a name.</fb:message></fb:error>';
-	}
-	elseif (isset($_GET['no_category'])){
-		echo '<fb:error><fb:message>You need to specify a category and subcategory.</fb:message></fb:error>';
-	}
-}
-
 /////////////////////////////////
 // PRINT USER MESSAGES
 /////////////////////////////////
 
-if (isset($_GET['msg'])){
-	if (isset($_GET['success'])){
-		//success, event created!
-		if ($_GET['success'] == 1)
-			echo '<fb:success><fb:message>1 Event created.</fb:message></fb:success>';
-		else
-			echo '<fb:success><fb:message>'.$_GET['success'].' Events created.</fb:message></fb:success>';
-	}
-	elseif (isset($_GET['wait'])){
-		//success, first 30 events created!
-		echo '<fb:success><fb:message>'.$_GET['wait'].' Events created. More will be added automatically in a few minutes to not overstretch the facebook limits.</fb:message></fb:success>';
-	}
+if (!$perms && isset($_GET['fb_perms'])){
+		echo '<fb:error><fb:message>For this app to be able to create events, you need to give it permission to do so. Please resubmit the form.</fb:error>';
 }
+
 
 if (isset($_GET['only_unsub'])){
 		//only unsubscribe from subscription, events remain in table user$user_id
@@ -152,7 +111,7 @@ elseif (isset($_GET['unsub_remove'])){
 
 <script type="text/javascript">
 <!--
-function show(id){
+function show(id, siteHeight){
 	var search=document.getElementById(id).getStyle('display');
 	if(search == 'block')    {
 		document.getElementById(id).setStyle('display','none');
@@ -160,7 +119,7 @@ function show(id){
 	}
 	else{
 		document.getElementById(id).setStyle('display','block');
-		document.getElementById("subscriptions").setStyle('minHeight', '75em');
+		document.getElementById("subscriptions").setStyle('minHeight', siteHeight);
 	}
 }
 
@@ -192,9 +151,14 @@ function unsubscribe(sub_id, sub_name){
 </div>
 </div>
 
+<!-- div to place messages with facebook's mockAJAX in -->
+<div id="messages">
+	<img id="spinner" src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..." style="display:none;">
+</div>
+
 <div>
-	<!--GUI: URL-SUBMIT FORM-->
-	<form promptpermission="offline_access,create_event" method="get">
+	<!-- GUI: URL-SUBMIT FORM -->
+	<form id="sub_form" method="get" promptpermission="offline_access, create_event">
 		<p>You can subscribe to a calendar which supports the <a href="http://en.wikipedia.org/wiki/ICalendar" target="_blank">iCalendar format</a>. This calendar will then be periodically checked for new events:</p>
 	<div id="fields">
 		<div class="box">
@@ -209,12 +173,18 @@ function unsubscribe(sub_id, sub_name){
 			</div>
 			
 			<div class="inputs" id="subscribe">
-				<input type="submit" value="Subscribe">
+				
 				<?php
-					if(!isset($_GET['fb_perms']) && $no_perms){
-						echo '<p>Upon submitting the form, you will be prompted to grant this app permission to create events even when you are not on facebook.</p>';
-					}
+				
+				if (!$perms){
+					echo '<input type="submit" value="Subscribe">';
+					echo '<p>Upon submitting the form, you will be prompted to grant this app permission to create events even when you are not on facebook.</p>';
+				}
+				else{
+					echo '<input type="submit" value="Subscribe" clickrewriteform="sub_form" clickrewriteurl="' . _HOST_URL .'receive_sub.php" clickrewriteid="messages" clicktoshow="spinner">';
+				}
 				?>
+				
 			</div>
 		</div>
 		<div class="box"><p>Facebook requires you to assign a category and subcategory to your events. Choose those that best fit your calendar or let them default to category: <i>Other</i> and subcategory: <i>Office Hours</i>.</p>
@@ -222,7 +192,7 @@ function unsubscribe(sub_id, sub_name){
 				<div class="textfield">Category:</div><input type="text" name="category" size="1" maxlength="2" value="8"><br/>
 				<div class="textfield">Subcategory:</div><input type="text" name="subcategory" size="1" maxlength="2" value="29"><br/>
 			</div>
-			<div id="catlistlink"><a href="#" onClick="show('catlist')">Categories</a></div>
+			<div id="catlistlink"><a href="#" onClick="show('catlist', '75em')">Categories</a></div>
 			<div id="catlist" style="display:none;">
 				<div class="cats">
 				<h3>Categories</h3>
@@ -299,10 +269,18 @@ function unsubscribe(sub_id, sub_name){
 				</li></ul>
 				</div>
 			</div>
-			<div id="groupid">
-				<p>If you want to create these events for a facebook group or page, enter its id here. (check the web-address of the grouppage for gid=XXX)</p>
-				<input type="text" name="page_id" size="10" value="<?php if(isset($_GET['fb_page_id'])){echo $_GET['fb_page_id'];} ?>">
+			<div id="options_link">
+				<a href="#" onClick="show('options', '5em')">Advanced options</a>
 			</div>
+	
+			<div id="options" style="display:none;">
+				<div id="groupid">
+					<h4>Group/Page</h4>
+					<p>If you want to create these events for a facebook group or (fan-)page, enter its id here. (check the web-address of the grouppage for gid=XXX)</p>
+					<input type="text" name="page_id" size="10" value="<?php if(isset($_GET['fb_page_id'])){echo $_GET['fb_page_id'];} ?>">
+				</div>
+			</div>
+			
 		</div>
 	</div>
 	</form>
@@ -344,90 +322,4 @@ if (mysql_num_rows($urls) > 0){
 
 </div>
 
-<?php
-/////////////////////////////////
-// PARSE NEW SUBSCRIPTION
-/////////////////////////////////
-if (!$no_perms && isset($_GET['url'])){
-	$url = $_GET['url'];
-	$page_id = $_GET['page_id'];
-	
-	//check subscription name
-	if (mb_strlen($_GET['sub_name']) == 0){
-		print('<fb:redirect url="'._SITE_URL.'?err&no_sub_name"/>');
-		exit;
-	}
-	else{
-		$sub_name = $_GET['sub_name'];
-	}
-	
-	//check category
-	if ($_GET['category'] == "" || $_GET['subcategory'] == ""){
-		print('<fb:redirect url="'._SITE_URL.'?err&no_category"/>');
-		exit;
-	}
-	else{
-		$category = $_GET['category'];
-		$subcategory = $_GET['subcategory'];
-	}
-
-	//put subscription specific data in $sub_data array
-	$sub_data = array("url" => $url, "user_id" => $user_id, "category" => $category, "subcategory" => $subcategory, "page_id" => $_GET['page_id']);
-
-	$calendar  = new Calendar($sub_data);
-
-	//check url
-	if (!$calendar->url_valid()){
-		print('<fb:redirect url="'._SITE_URL.'?err&url-not-correct"/>');
-		exit;
-	}
-	
-	//check file
-	if (!$calendar->file_valid()){
-		print('<fb:redirect url="'._SITE_URL.'?err&file-not-valid"/>');
-		exit;
-	}
-	if (!$calendar->file_valid_event()){
-		print('<fb:redirect url="'._SITE_URL.'?err&file-no-event"/>');
-		exit;
-	}
-	
-	//check whether url is already in db
-	$urls = mysql_query("select * from subscriptions where user_id ='$user_id' and url = '$url'") or trigger_error(mysql_error());
-	if (mysql_num_rows($urls) == 0){
-		//add url to db
-		mysql_query("INSERT INTO subscriptions (sub_name, user_id, url, category, subcategory, page_id) VALUES ('$sub_name', '$user_id', '$url', '$category', '$subcategory', '$page_id')") or trigger_error(mysql_error());
-	}
-	else{
-		//url already present
-		print('<fb:redirect url="'._SITE_URL.'?err&old-url"/>');
-		exit;
-	}
-	//check whether user is already in db
-	$urls = mysql_query("show tables like 'user$user_id'") or trigger_error(mysql_error());
-	if (mysql_num_rows($urls) == 0){
-		//create new user-table
-		$sql = 'CREATE TABLE user'. $user_id .'
-		(
-		event_id bigint NOT NULL,
-		PRIMARY KEY(event_id),
-		UID varchar(50),
-		summary varchar(300),
-		from_url varchar(300)
-		)';
-		if (!mysql_query($sql)){
-			echo "Error creating table: " . mysql_error();
-		}
-	}
-	
-	//checkout calendar
-	$numb_events = $calendar->update();
-	if ($numb_events > 0){
-		print('<fb:redirect url="'._SITE_URL.'?msg&success='.$numb_events.'"/>');
-	}
-}
-
-
-
-mysql_close($con);
-?>
+<?php mysql_close($con); ?>

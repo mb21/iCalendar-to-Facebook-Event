@@ -83,7 +83,7 @@ class Calendar
 				
 				if($numb_events >= $config['number_of_events_threshold']){
 					//to not overstretch the facebook limits, add the other events later..
-					print('<fb:redirect url="'._SITE_URL.'?msg&wait='.$numb_events.'"/>');
+					echo '<fb:success><fb:message>'.$numb_events.' Events created. More will be added automatically in a few minutes to not overstretch the facebook limits.</fb:message></fb:success>';
 					throw new Exception("Numver of Events limit reached.");
 				}
 				
@@ -243,7 +243,7 @@ class Calendar
 	// METHODS USED FOR TESTING ONLY
 	/////////////////////////////////
 	
-	/*
+	
 	public function print_all_parsed(){
 		//echos all events in fbEvent format
 		$this->ensure_parse();
@@ -280,6 +280,6 @@ class Calendar
 		}
 	}
 	
-	*/
+	
 }
 ?>

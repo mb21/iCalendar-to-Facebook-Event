@@ -32,15 +32,25 @@
 #catlist{
 	position:absolute;
 	z-index: 1;
-	border: solid 1px grey;
+	border: solid 1px #3B5998;
 	padding: .2em 1em;
 	background-color: white;
 	right: 0.5em;
 	top: 12em;
 }
-#groupid{
+#options_link{
 	clear:both;
-	padding: .2em 0 0 0;
+	padding: 2em 0 1em 0;
+}
+#options{
+	width: 400px;
+	position:absolute;
+	z-index: 1;
+	border: solid 1px #3B5998;
+	padding: .8em 1em;
+	background-color: white;
+	left: 30em;
+	top: 18em;
 }
 .inputs{
 	padding: .5em 0;
