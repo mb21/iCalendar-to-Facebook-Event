@@ -1,3 +1,6 @@
+#messages{
+	min-height: 60px;
+}
 .box{
 	float:left;
 	width: 50%;

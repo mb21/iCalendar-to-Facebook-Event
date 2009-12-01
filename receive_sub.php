@@ -10,7 +10,7 @@ require_once 'facebook/facebook.php';
 $facebook = new Facebook($appapikey, $appsecret);
 $user_id = $facebook->require_login();
 
-echo '<img id="spinner" src="' . _HOST_URL .'loader.gif" alt="Loading..." style="display:none; padding-right:540px;">';
+echo '<div style="height: 30px"><img id="spinner" src="' . _HOST_URL .'loader.gif" alt="Loading..." style="display:none; padding:0 540px 1em 0;"></div>';
 
 //whether offline_access and create_event permissions are set
 $perms = $facebook->api_client->users_hasAppPermission('offline_access') && $facebook->api_client->users_hasAppPermission('create_event');
@@ -31,31 +31,32 @@ function __autoload($class_name) {
 /////////////////////////////////
 // PARSE NEW SUBSCRIPTION
 /////////////////////////////////
-if ($perms && isset($_GET['url'])){
-	$url = $_GET['url'];
-	$page_id = $_GET['page_id'];
+if ($perms && isset($_POST['url'])){
+	
+	$url = $_POST['url'];
+	$page_id = $_POST['page_id'];
 	
 	//check subscription name
-	if (mb_strlen($_GET['sub_name']) == 0){
+	if (mb_strlen($_POST['sub_name']) == 0){
 		echo '<fb:error><fb:message>You need to give your subscription a name.</fb:message></fb:error>';
 		exit;
 	}
 	else{
-		$sub_name = $_GET['sub_name'];
+		$sub_name = $_POST['sub_name'];
 	}
 	
 	//check category
-	if ($_GET['category'] == "" || $_GET['subcategory'] == ""){
+	if ($_POST['category'] == "" || $_POST['subcategory'] == ""){
 		echo '<fb:error><fb:message>You need to specify a category and subcategory.</fb:message></fb:error>';
 		exit;
 	}
 	else{
-		$category = $_GET['category'];
-		$subcategory = $_GET['subcategory'];
+		$category = $_POST['category'];
+		$subcategory = $_POST['subcategory'];
 	}
 
 	//put subscription specific data in $sub_data array
-	$sub_data = array("url" => $url, "user_id" => $user_id, "category" => $category, "subcategory" => $subcategory, "page_id" => $_GET['page_id']);
+	$sub_data = array("url" => $url, "user_id" => $user_id, "category" => $category, "subcategory" => $subcategory, "page_id" => $_POST['page_id']);
 
 	$calendar  = new Calendar($sub_data);
 
@@ -115,4 +116,5 @@ if ($perms && isset($_GET['url'])){
 
 
 mysql_close($con);
+
 ?>

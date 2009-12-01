@@ -151,11 +151,6 @@ function unsubscribe(sub_id, sub_name){
 </div>
 </div>
 
-<!-- div to place messages with facebook's mockAJAX in -->
-<div id="messages">
-	<img id="spinner" src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..." style="display:none;">
-</div>
-
 <div>
 	<!-- GUI: URL-SUBMIT FORM -->
 	<form id="sub_form" method="get" promptpermission="offline_access, create_event">
@@ -284,6 +279,11 @@ function unsubscribe(sub_id, sub_name){
 		</div>
 	</div>
 	</form>
+</div>
+
+<!-- div to place messages with facebook's mockAJAX in -->
+<div id="messages">
+	<img id="spinner" src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..." style="display:none;">
 </div>
 
 

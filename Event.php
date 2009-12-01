@@ -109,7 +109,8 @@ class Event
 			$event['name'] = $this->icsEvent['SUMMARY'];
 				
 		//description
-		$event['description'] = $this->icsEvent['DESCRIPTION'];
+		if (isset($this->icsEvent['DESCRIPTION']))
+			$event['description'] = $this->icsEvent['DESCRIPTION'];
 		
 		//start_time
 		$event["start_time"] = $this->to_facebook_time($this->find_key("DTSTART"));
