@@ -1,12 +1,13 @@
+* bug fixes (especially in parsing files)
 
 * associate a picture with a subscription which then will be added to every event created
-* Update event on facebook when it changes in the ical file
-* support recurring events
+* support recurring events in ics files
 
 * add URL from ical file with Events.edit
 * Your default RSVP: not attending. with Events.rsvp
 * publish to stream: $facebook->api_client->stream_publish($message, $attachment, $action_links, NULL, $page_id);
 * invite members of group/fans with Events.invite
+* add 'sub_id' field to user### table and check that everything goes smooth when the same user has twice the same url (say for different pages/groups)
 
-* redo user interface with AJAX. (error messages etc.)
-* display error message from update_all.php to user
+* display error message from update_all.php somehow to user
+* update session key in db when it's wrong
