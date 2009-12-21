@@ -27,10 +27,7 @@ class Calendar
 	// of form: $sub_data = array("url" => $url, "user_id" => $user_id, "category" => $_GET['category'], "subcategory" => $_GET['subcategory'], "page_id" => $_GET['page_id']);
 	
 	public $icsCalendar;
-	
 	public $file;
-	
-	
 	
 	///////////////////////////////
 	//PUBLIC METHODS
@@ -65,8 +62,7 @@ class Calendar
 	
 	public function update(){
 		//updates all events in this calendar and returns number of new events created
-		global $config;
-		
+		global $config;		
 		$this->ensure_parse();
 		$user_id = $this->sub_data['user_id'];
 		$url = $this->sub_data['url'];
@@ -80,7 +76,7 @@ class Calendar
 			if (mysql_num_rows($result) == 0){
 				//event doesn't exist yet, add it
 				
-				if($numb_events >= $config['number_of_events_threshold']){
+				if($numb_events > $config['number_of_events_threshold']){
 					//to not overstretch the facebook limits, add the other events later..
 					throw new Exception($numb_events." Events created. More will be added automatically in a few minutes to not overstretch the facebook limits.");
 				}
@@ -93,13 +89,36 @@ class Calendar
 
 					//create facebook event
 					$event_id = $event_obj->post_to_fb();
-					
+					$lastupdated = isset($event['LAST-MODIFIED']) ? $event['LAST-MODIFIED'] : '';
+
 					//get rid of all ' for mysql
 					$summary = str_replace("'","\'", $event['SUMMARY']);
 	
-					mysql_query("INSERT INTO user$user_id (event_id, UID, summary, from_url) VALUES ('$event_id', '$UID', '$summary','$url')") or trigger_error(mysql_error());
+					mysql_query("INSERT INTO user$user_id (event_id, UID, summary, lastupdated, from_url) VALUES ('$event_id', '$UID', '$summary', '$lastupdated', '$url')") or trigger_error(mysql_error());
 					
 					$numb_events++;
+				}
+			}
+			else{
+				$data = mysql_fetch_array($result);
+				
+				if ( isset($event['LAST-MODIFIED']) && $event['LAST-MODIFIED'] > $data['lastupdated']  ) {
+					//event already exists, but has been updated
+					$event_id = $data['event_id'];
+					//new event
+					$event_obj = new Event($event,$this);
+					
+					// edit facebook event
+					$status = $event_obj->update_to_fb($event_id) or trigger_error('Could not update event ' . $event_id);
+					
+					$lastupdated = $event['LAST-MODIFIED'];
+					
+					//get rid of all ' for mysql
+					$summary = str_replace("'","\'", $event['SUMMARY']);
+					
+					mysql_query("UPDATE user$user_id SET summary='$summary', lastupdated='$lastupdated' WHERE event_id='$event_id' AND UID='$UID' AND from_url='$url'") or trigger_error(mysql_error());
+					
+					$numb_events++;	
 				}
 			}
 		}
@@ -190,16 +209,19 @@ class Calendar
 		if ($this->file_valid()){
 			$ical = $this->file;
 			
+			// Un-fold
+			$ical = preg_replace( '/[\r\n]+ /', '', $ical );
+	
 			//get timezone
 			if (preg_match('/(X-WR-TIMEZONE.*?\\n)/si', $ical, $result)){
-				$tmpholderarray = explode(":",$result[0]);
+				$tmpholderarray = explode(":",$result[0], 2);
 				preg_match('/(\S*)/', $tmpholderarray[1], $result);
 				$this->calendar_timezone = $result[0];
 			}
 		
 			preg_match_all('/(BEGIN:VEVENT.*?END:VEVENT)/si', $ical, $result, PREG_PATTERN_ORDER);
 			for ($i = 0; $i < count($result[0]); $i++) {
-				$tmpbyline = explode("\r\n", $result[0][$i]);
+				$tmpbyline = preg_split( '/[\r\n]+/', $result[0][$i] );
 				
 				foreach ($tmpbyline as $item) {
 					$tmpholderarray = explode(":",$item);
@@ -209,25 +231,23 @@ class Calendar
 					
 				}
 				
-				//get rid of backslashes before commas
-				if(isset($majorarray['LOCATION']))
-					$majorarray['LOCATION'] = str_replace("\,",",", $majorarray['LOCATION']);
-				if(isset($majorarray['SUMMARY']))
-					$majorarray['SUMMARY'] = str_replace("\,",",", $majorarray['SUMMARY']);
-				
-				//get description
-				if (preg_match('/DESCRIPTION:(.*)\n[^\s]/siU', $result[0][$i], $regs)) {
-					$data = $regs[1];			
-					$data = str_replace("\\n", "\r\n", $data);
-					$data = preg_replace('/\s\n\s/', "", $data);
-					$data = str_replace("\,",",", $data);
-					$data = str_replace("  ", " ", $data);
-					$majorarray['DESCRIPTION'] = strip_tags($data);
+				// Decode encoded characters
+				$encoded = array( '\\\\', '\,', '\;', '\:' );
+				$decoded = array( '\\', ',', ';', ':' );
+				if(isset($majorarray['LOCATION'])) {
+					$majorarray['LOCATION'] = str_replace($encoded, $decoded, $majorarray['LOCATION']);
 				}
-				
+				if(isset($majorarray['SUMMARY'])) {
+					$majorarray['SUMMARY'] = str_replace($encoded, $decoded, $majorarray['SUMMARY']);
+				}
+				if(isset($majorarray['DESCRIPTION'])) {
+					$majorarray['DESCRIPTION'] = str_replace($encoded, $decoded, $majorarray['DESCRIPTION']);
+					$majorarray['DESCRIPTION'] = str_replace("\\n", "\r\n", $majorarray['DESCRIPTION']);
+					$majorarray['DESCRIPTION'] = strip_tags($majorarray['DESCRIPTION']);
+				}
+			
 				$icalarray[] = $majorarray;
-				unset($majorarray);
-						 
+				unset($majorarray);		 
 			}
 			$this->icsCalendar = $icalarray;
 		}

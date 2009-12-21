@@ -40,7 +40,7 @@ if (isset($_POST['unsub_sub_id'])){
 	$sub_id = $_POST['unsub_sub_id'];
 
 	try{
-		if ($only_unsub){
+		if (!$only_unsub){
 				//remove all events on fb
 				
 				$query = mysql_query("select url from subscriptions where user_id = '$user_id' and sub_id ='$sub_id'") or trigger_error(mysql_error());

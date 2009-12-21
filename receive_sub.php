@@ -32,7 +32,6 @@ function __autoload($class_name) {
 // PARSE NEW SUBSCRIPTION
 /////////////////////////////////
 
-
 if ($perms && isset($_POST['url'])){
 	$url = $_POST['url'];
 	$page_id = $_POST['page_id'];
@@ -93,6 +92,7 @@ if ($perms && isset($_POST['url'])){
 			PRIMARY KEY(event_id),
 			UID varchar(50),
 			summary varchar(300),
+			lastupdated varchar(100),
 			from_url varchar(300)
 			)';
 			if (!mysql_query($sql)){

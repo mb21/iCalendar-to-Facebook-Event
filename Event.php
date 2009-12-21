@@ -45,22 +45,11 @@ class Event
     	//get session key
     	$query = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
 		$session_key = mysql_result($query, 0);
-		
-		try{
-			$facebook->set_user($user_id, $session_key);
-		}catch(Exception $e){
-			$error = $e->getMessage().' Error code:'.$e->getCode();
-			throw new Exception($error);
-		}
+
+		$facebook->set_user($user_id, $session_key);
 		
 		//post array to facebook
-		try{
-			$event_id=$facebook->api_client->events_create(json_encode($this->fbEvent));
-		}catch(Exception $e){
-			$error = $e->getMessage().' Error code:'.$e->getCode();
-			//trigger_error($error);
-			throw new Exception($error);
-		}
+		$event_id=$facebook->api_client->events_create(json_encode($this->fbEvent));
 		return $event_id;
     }
     
@@ -69,6 +58,26 @@ class Event
     		$this->convert();
     	}
     }
+    
+	public function update_to_fb($eid){
+		global $facebook;
+		
+		//post this event to facebook
+		$this->ensure_convert();
+		
+		$user_id = $this->calendar->sub_data['user_id'];
+		
+		//get session key
+		$query = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
+		$session_key = mysql_result($query, 0);
+
+		$facebook->set_user($user_id, $session_key);
+		
+		//post array to facebook
+		$status=$facebook->api_client->events_edit($eid, json_encode($this->fbEvent));
+		
+		return $status;
+	}
     
 	public function get_start_time(){
 		//returns the unix timestamp in facebooks weird time
@@ -95,8 +104,8 @@ class Event
 		
 		
 		//location
-   		if ($this->icsEvent['LOCATION'] == "")
-			$event['location'] = " ";
+   		if ($this->icsEvent['LOCATION'] == '')
+			$event['location'] = ' ';
 		else
 			$event['location'] = $this->icsEvent['LOCATION'];
 		
@@ -109,7 +118,7 @@ class Event
 		}
 				
 		//description
-		if (isset($this->icsEvent['DESCRIPTION']))
+		if (isset($event['description']))
 			$event['description'] = $this->icsEvent['DESCRIPTION'];
 		
 		//start_time
