@@ -50,11 +50,8 @@ class Event
 			$facebook->set_user($user_id, $session_key);
 		}catch(Exception $e){
 			$error = $e->getMessage().' Error code:'.$e->getCode();
-			trigger_error($error);
+			throw new Exception($error);
 		}
-		
-		//print_r($this->fbEvent);
-		//echo "<br>";
 		
 		//post array to facebook
 		try{
@@ -62,7 +59,7 @@ class Event
 		}catch(Exception $e){
 			$error = $e->getMessage().' Error code:'.$e->getCode();
 			//trigger_error($error);
-			echo '<fb:error><fb:message>Couldn\'t create event. '.$error.'.</fb:message></fb:error>';
+			throw new Exception($error);
 		}
 		return $event_id;
     }
@@ -85,7 +82,8 @@ class Event
     
     private function convert(){
     	//converts icsEvent to fbEvent
-    		
+    	global $config;
+    	
 		//category
 		$event['category'] = $this->calendar->sub_data['category'];
 		//subcategory
@@ -105,8 +103,10 @@ class Event
 		//summary	
 		if ($this->icsEvent['SUMMARY'] == "")
 			$event['name'] = "unknown name";
-		else
-			$event['name'] = $this->icsEvent['SUMMARY'];
+		else{
+			//facebook doesn't allow title names that are too long
+			$event['name'] = mb_substr($this->icsEvent['SUMMARY'], 0, $config['max_length_title']);
+		}
 				
 		//description
 		if (isset($this->icsEvent['DESCRIPTION']))

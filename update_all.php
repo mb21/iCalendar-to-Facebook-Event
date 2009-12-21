@@ -46,7 +46,7 @@ $numb_subs = 0;
 while($row = mysql_fetch_assoc($result)){
 	$sub_data = array("url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
 	
-	echo "try ".$row['url']."<br>";
+	echo "<br>try ".$row['url']."<br>";
 	
 	try{
 		$numb_subs++;
@@ -56,7 +56,7 @@ while($row = mysql_fetch_assoc($result)){
 		
 		$numb_events = $numb_events + $newevs;
 		
-		echo "done<br>";
+		echo "done";
 	}catch(Exception $e){
 		$error = $e->getMessage().' Error code:'.$e->getCode();
 		echo $error;

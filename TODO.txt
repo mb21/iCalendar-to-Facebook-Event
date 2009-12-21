@@ -1,11 +1,12 @@
 
 * associate a picture with a subscription which then will be added to every event created
 * Update event on facebook when it changes in the ical file
+* support recurring events
 
 * add URL from ical file with Events.edit
-* Your default RSVP: not attending.
+* Your default RSVP: not attending. with Events.rsvp
 * publish to stream: $facebook->api_client->stream_publish($message, $attachment, $action_links, NULL, $page_id);
-* invite members of group/fans
+* invite members of group/fans with Events.invite
 
 * redo user interface with AJAX. (error messages etc.)
 * display error message from update_all.php to user

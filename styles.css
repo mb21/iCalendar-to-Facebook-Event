@@ -1,5 +1,5 @@
 #messages{
-	min-height: 60px;
+	min-height: 10px;
 }
 .box{
 	float:left;
@@ -15,12 +15,12 @@
 	float: left;
 }
 .cats{
-	padding: .5em 0;
+	padding: .7em 1em;
 	width: 8em;
 	float: left;
 }
 .subcats{
-	padding: .5em 0;
+	padding: .7em 1em;
 	width: 12em;
 	float: left;
 }
@@ -28,6 +28,7 @@
 	border: solid 1px #3B5998;
 	display: inline-block;
 	padding: .5em 2em;
+	margin-bottom: 1em;
 }
 #catlistlink{
 	float:left;
@@ -36,7 +37,6 @@
 	position:absolute;
 	z-index: 1;
 	border: solid 1px #3B5998;
-	padding: .2em 1em;
 	background-color: white;
 	right: 0.5em;
 	top: 12em;
@@ -50,10 +50,15 @@
 	position:absolute;
 	z-index: 1;
 	border: solid 1px #3B5998;
-	padding: .8em 1em;
 	background-color: white;
 	left: 30em;
 	top: 18em;
+}
+.container{
+	padding: .8em 1em;
+}
+.close{
+	float: right;
 }
 .inputs{
 	padding: .5em 0;
@@ -104,7 +109,11 @@
 
 #subscription_table{
 	width: 100%;
-	margin: 2em 0;
+	margin: .5em 0 2em 0;
+}
+#subscription_table p{
+	padding: 0;
+	margin: 0;
 }
 .table_heading{
 	font-weight: bold;
@@ -124,6 +133,9 @@
 }
 .tb_group{
 	width: 100px;
+}
+.tb_edit{
+	width: 40px;
 }
 .edit{
 	width: 50px;

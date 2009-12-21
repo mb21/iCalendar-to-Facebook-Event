@@ -61,56 +61,90 @@ if (isset($_POST["fb_sig_session_key"]) && isset($_GET['fb_perms']) && $facebook
 
 
 /////////////////////////////////
-// PRINT USER MESSAGES
+// GUI
 /////////////////////////////////
-
-if (!$perms && isset($_GET['fb_perms'])){
-		echo '<fb:error><fb:message>For this app to be able to create events, you need to give it permission to do so. Please resubmit the form.</fb:error>';
-}
-
-
-if (isset($_GET['only_unsub'])){
-		//only unsubscribe from subscription, events remain in table user$user_id
-
-		$sub_id = $_GET['only_unsub'];
-		mysql_query("DELETE FROM subscriptions WHERE sub_id='$sub_id'");
-
-		echo '<fb:success><fb:message>You have successfully unsubscribed.</fb:message></fb:success>';
-}
-elseif (isset($_GET['unsub_remove'])){
-		//remove all events on fb
-		$sub_id = $_GET['unsub_remove'];
-		$query = mysql_query("select url from subscriptions where user_id = '$user_id' and sub_id ='$sub_id'") or trigger_error(mysql_error());
-		$url = mysql_result($query, 0);
-		$result = mysql_query("select event_id from user$user_id where from_url='$url'") or trigger_error(mysql_error());
-		$numb_events = 0;
-		while($row = mysql_fetch_array($result)){
-			//try to not over-do facebook...
-			if($numb_events >= $config['number_of_events_threshold']){
-				$numb_events = 0;
-				print('<fb:redirect url="'._SITE_URL.'limit_reached.php"/>');
-				sleep(5);
-			}
-			try{
-				$facebook->api_client->events_cancel($row['event_id']);
-				$numb_events++;
-			}catch(Exception $e){
-				$error = $e->getMessage().' Error code:'.$e->getCode();
-				trigger_error($error);
-			}
-		}
-		
-		//remove them in the db
-		mysql_query("DELETE FROM user$user_id WHERE from_url='$url'");
-		mysql_query("DELETE FROM subscriptions WHERE sub_id='$sub_id'");
-		
-		echo '<fb:success><fb:message>You have successfully unsubscribed and all events on facebook from that subscription have been removed.</fb:message></fb:success>';
-}
-
 ?>
 
 <script type="text/javascript">
 <!--
+
+function do_submit(formname, posturl, rewriteid) {
+	var div_id = document.getElementById(rewriteid);
+	var form = document.getElementById(formname);
+    
+	//display loading bar
+	div_id.setInnerXHTML('<img src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..."/>');
+	
+	var ajax = new Ajax();
+	ajax.responseType = Ajax.JSON;
+	ajax.requireLogin = true;
+	ajax.ondone = function(data) {
+	div_id.setInnerXHTML(data.msg);
+		if (data.sub_name){
+			insertSub(data);
+		}
+	}
+	var formdata = form.serialize();
+	ajax.post(posturl, formdata);
+}
+
+<?php
+// Print Subscriptions array
+$result = mysql_query("select * from subscriptions where user_id ='$user_id'") or trigger_error(mysql_error());
+if (mysql_num_rows($result) > 0){
+	$arr = array();
+	while($obj = mysql_fetch_object($result)){
+		$arr[] = $obj;
+	}
+	echo "var subscriptions = " . json_encode($arr) . ";";
+}
+?>
+
+function insertSub(json_sub){
+	var table = document.getElementById('subscription_table');
+	var row = document.createElement('tr');
+	row.setId('sub_'+json_sub.sub_id);
+	
+	var sub_name = document.createElement('td');
+	row.appendChild(sub_name);
+	sub_name.setInnerXHTML("<h3 title='"+ json_sub.url +"'>" + json_sub.sub_name + "</h3>");
+
+	var category = document.createElement('td');
+	row.appendChild(category);
+	category.setInnerXHTML("<p>" + json_sub.category + "</p>");
+
+	var subcategory = document.createElement('td');
+	row.appendChild(subcategory);
+	subcategory.setInnerXHTML("<p>" + json_sub.subcategory + "</p>");
+	
+	var group = document.createElement('td');
+	row.appendChild(group);
+	if (json_sub.page_id == 0){
+		var text = "<p>–</p>";
+	}
+	else{
+		var text = '<p><a href="http://www.facebook.com/group.php?gid=' + json_sub.page_id + '">' + json_sub.page_id + '</a></p>';
+	}
+	group.setInnerXHTML(text);
+	
+	var edit = document.createElement('td');
+	row.appendChild(edit);
+	edit.setInnerXHTML('<p><a href="#">Edit</a></p>');
+	edit.addEventListener('click', function() { show(json_sub.sub_id, '3em') });
+	
+	var remove = document.createElement('td');
+	row.appendChild(remove);
+	remove.setInnerXHTML('<p><a href="#">Unsubscribe</a></p>');
+	remove.addEventListener('click', function() { show_unsubscribe(json_sub.sub_id, json_sub.sub_name ) });
+	
+	table.appendChild(row);
+}
+
+function removeSub(sub_id){
+	var row = document.getElementById('sub_'+sub_id);
+	document.getElementById('subscription_table').removeChild(row);
+}
+
 function show(id, siteHeight){
 	var search=document.getElementById(id).getStyle('display');
 	if(search == 'block')    {
@@ -123,7 +157,10 @@ function show(id, siteHeight){
 	}
 }
 
-function unsubscribe(sub_id, sub_name){
+function show_unsubscribe(sub_id, sub_name){
+	//put sub_id in hidden input field
+	document.getElementById('unsub_sub_id').setValue(sub_id);
+	
 	var id = "unsubscribe_dialog";
 	//set text in dialog
 	text = "<p>Are you sure you want to unsubscribe from calendar <i>"+sub_name+"</i>? Do you also want to remove all events of that subscription from facebook?</p>";
@@ -131,52 +168,75 @@ function unsubscribe(sub_id, sub_name){
 	text = "<h2 class=\"dialog_head_text\">Unsubscribe from calendar <i>"+sub_name+"</i></h2>";
 	document.getElementById("unsub_head").setInnerXHTML(text);
 
-	//set links in dialog	
-	document.getElementById("unsub_remove").setValue(sub_id);
-	document.getElementById("only_unsub").setValue(sub_id);
-
 	//make dialog visible
 	document.getElementById(id).setStyle('display','block');
+}
+
+function unsubscribe(mode) {
+	document.getElementById('unsubscribe_dialog').setStyle('display','none');
+	
+	var posturl = '<?php echo _HOST_URL; ?>unsubscribe.php';
+	var div_id = document.getElementById('messages');
+	var form = document.getElementById('unsub_form');
+
+	//display loading bar
+	div_id.setInnerXHTML('<img src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..."/>');
+	
+	var ajax = new Ajax();
+	ajax.responseType = Ajax.JSON;
+	ajax.requireLogin = true;
+	ajax.ondone = function(data) {
+		div_id.setInnerXHTML(data.msg);
+		if (data.success){
+			removeSub(data.sub_id);
+		}
+	}
+	document.getElementById('unsub_mode').setValue(mode);
+	formdata = form.serialize();
+	ajax.post(posturl, formdata);
 }
 //--> 
 </script> 
 
+<!-- UNSUBSCRIBE? DIALOG-->
 <div id="unsubscribe_dialog" class="dialog" style="display:none;">
 	<div class="dialog_head" id="unsub_head"></div>
 	<div class="dialog_body" id="unsub_text"></div>
 	<div class="dialog_button_area">
+	<form id="unsub_form">
 		<input type="button" value="Cancel" onclick="document.getElementById('unsubscribe_dialog').setStyle('display','none');" class="dialog_buttons" />
-		<form action="<?php echo _SITE_URL; ?>"><input type="text" id="unsub_remove" name="unsub_remove" style="display:none;" /><input type="submit" value="Unsubscribe and remove all events from facebook" class="dialog_buttons"></form>
-		<form action="<?php echo _SITE_URL; ?>"><input type="text" id="only_unsub" name="only_unsub" style="display:none;"/><input type="submit" value="Only unsubscribe" class="dialog_buttons" /></form>
+		<input type="submit" value="Unsubscribe and remove all events from facebook" class="dialog_buttons" onclick="unsubscribe('unsub_remove'); return false;">
+		<input type="submit" value="Only unsubscribe" class="dialog_buttons" onclick="unsubscribe('only_unsub'); return false;"/>
+		<input type="text" id="unsub_sub_id" name="unsub_sub_id" style="display:none;" />
+		<input type="text" id="unsub_mode" name="unsub_mode" style="display:none;" />
+	</form>
 </div>
 </div>
 
 <div>
-	<!-- GUI: URL-SUBMIT FORM -->
-	<form id="sub_form" method="get" promptpermission="offline_access, create_event">
+	<!-- URL-SUBMIT FORM -->
+	<form id="sub_form" method="get" action="index.php" promptpermission="offline_access, create_event">
 		<p>You can subscribe to a calendar which supports the <a href="http://en.wikipedia.org/wiki/ICalendar" target="_blank">iCalendar format</a>. This calendar will then be periodically checked for new events:</p>
 	<div id="fields">
 		<div class="box">
 			<div class="inputs">
 				<p>Name of subscription (anything meaningful):</p>
-				<input type="text" name="sub_name" size="20" maxlength="30">
+				<input type="text" name="sub_name" size="20" maxlength="30" value="<?php if(isset($_GET['sub_name'])) echo $_GET['sub_name']; ?>">
 			</div>
 			
 			<div class="inputs">
 				<p>URL/Web address:</p>
-				<input type="text" name="url" size="40">
+				<input type="text" name="url" size="40" value="<?php if(isset($_GET['url'])) echo $_GET['url']; ?>">
 			</div>
 			
 			<div class="inputs" id="subscribe">
-				
 				<?php
-				
 				if (!$perms){
-					echo '<input type="submit" value="Subscribe">';
+					echo '<input type="submit" value="Subscribe">';	
 					echo '<p>Upon submitting the form, you will be prompted to grant this app permission to create events even when you are not on facebook.</p>';
 				}
 				else{
-					echo '<input type="submit" value="Subscribe" clickrewriteform="sub_form" clickrewriteurl="' . _HOST_URL .'receive_sub.php" clickrewriteid="messages" clicktoshow="spinner">';
+					echo '<input type="submit" value="Subscribe" onclick="do_submit(\'sub_form\',\'' . _HOST_URL . 'receive_sub.php\', \'messages\'); return false;">';
 				}
 				?>
 				
@@ -184,11 +244,12 @@ function unsubscribe(sub_id, sub_name){
 		</div>
 		<div class="box"><p>Facebook requires you to assign a category and subcategory to your events. Choose those that best fit your calendar or let them default to category: <i>Other</i> and subcategory: <i>Office Hours</i>.</p>
 			<div class="categories">
-				<div class="textfield">Category:</div><input type="text" name="category" size="1" maxlength="2" value="8"><br/>
-				<div class="textfield">Subcategory:</div><input type="text" name="subcategory" size="1" maxlength="2" value="29"><br/>
+				<div class="textfield">Category:</div><input type="text" name="category" size="2" maxlength="2" value="<?php if(isset($_GET['category'])) echo $_GET['category']; else echo '8';?>"><br/>
+				<div class="textfield">Subcategory:</div><input type="text" name="subcategory" size="2" maxlength="2" value="<?php if(isset($_GET['subcategory'])) echo $_GET['subcategory']; else echo '29';?>"><br/>
 			</div>
 			<div id="catlistlink"><a href="#" onClick="show('catlist', '75em')">Categories</a></div>
 			<div id="catlist" style="display:none;">
+				<a href="#" onClick="show('catlist', '75em')"><img class="close" src="<?php echo _HOST_URL; ?>close.png" alt="Close"/></a>
 				<div class="cats">
 				<h3>Categories</h3>
 				<ul><li> 1: Party
@@ -264,15 +325,21 @@ function unsubscribe(sub_id, sub_name){
 				</li></ul>
 				</div>
 			</div>
+			
+			<!-- ADVANCED OPTIONS-->
 			<div id="options_link">
 				<a href="#" onClick="show('options', '5em')">Advanced options</a>
 			</div>
-	
 			<div id="options" style="display:none;">
-				<div id="groupid">
-					<h4>Group/Page</h4>
-					<p>If you want to create these events for a facebook group or (fan-)page, enter its id here. (check the web-address of the grouppage for gid=XXX)</p>
-					<input type="text" name="page_id" size="10" value="<?php if(isset($_GET['fb_page_id'])){echo $_GET['fb_page_id'];} ?>">
+				<a href="#" onClick="show('options', '5em')"><img class="close" src="<?php echo _HOST_URL; ?>close.png" alt="Close"/></a>
+				<div class="container">
+					<div id="groupid">
+						<h4>Group/Page</h4>
+						<p>If you want to create these events for a facebook group or (fan-)page, enter its id here. (check the web-address of the grouppage for gid=XXX)</p>
+						<form id="advanced_sub_form">
+							<input type="text" name="page_id" size="10" value="<?php if(isset($_GET['page_id'])) echo $_GET['page_id']; ?>">
+						</form>
+					</div>
 				</div>
 			</div>
 			
@@ -281,45 +348,41 @@ function unsubscribe(sub_id, sub_name){
 	</form>
 </div>
 
-<!-- div to place messages with facebook's mockAJAX in -->
+<!-- div to place AJAX MESSAGES in -->
 <div id="messages">
-	<img id="spinner" src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..." style="display:none;">
-</div>
-
-
-<div id="subscriptions">
 
 <?php
-/////////////////////////////////
-// DRAW GUI: SUBSCRIPTIONS
-/////////////////////////////////
-
-$urls = mysql_query("select * from subscriptions where user_id ='$user_id'") or trigger_error(mysql_error());
-if (mysql_num_rows($urls) > 0){
-	echo '<table id="subscription_table"><tbody>';
-	echo '<tr class="table_heading"><th class="name"><h3>Subscription Name</h3></th><th class="tb_category">Category</th><th class="tb_subcategory">Subcategory</th><th class="tb_group">Group</th><th class="unsubscribe"></th></tr>';
-	//<th class="edit"></th>
-	
-	$result = mysql_query("SELECT * FROM subscriptions where user_id='$user_id'");
-	while($row = mysql_fetch_array($result)){
-		if($row['page_id'] > 0)
-			$td_group = '<td><a href="http://www.facebook.com/group.php?gid=' . $row['page_id'] . '">' . $row['page_id'] . '</a></td>';
-		else
-			$td_group = "<td>–</td>";
-		echo '<tr class="subs_row">';
-		print('<td><h3 title=' . $row['url'] . ">" . $row['sub_name'] . '</h3></td>');
-		print('<td>' . $row['category'] . '</td>');
-		print('<td>' . $row['subcategory'] . '</td>');
-		echo $td_group;
-		//print('<td><a href="'._SITE_URL.'?msg&edit='.$row['sub_id'].'">Edit</a></td>');
-		print('<td><a href="#" onClick="unsubscribe(\''.$row['sub_id'].'\',\''.$row['sub_name'].'\')">Unsubscribe</a></td>');
-		echo "</tr>";
+if (isset($_GET['fb_perms'])){
+	if (!$perms){
+		echo '<fb:error><fb:message>For this app to be able to create events, you need to give it permission to do so. Please resubmit the form.</fb:message></fb:error>';
 	}
-	echo "</tbody></table>";
+	else{
+		echo '<script type="text/javascript">;
+		do_submit(\'sub_form\',\'' . _HOST_URL . 'receive_sub.php\', \'messages\');
+		</script>';
+	}
 }
-
 ?>
-
 </div>
+
+
+<!-- SUBSCRIPTIONS TABLE-->
+<div id="subscriptions">
+<table id="subscription_table"><tbody>
+	<tr class="table_heading"><th class="name"><h3>Subscription Name</h3></th><th class="tb_category">Category</th><th class="tb_subcategory">Subcategory</th><th class="tb_group">Group</th><th class="edit"></th><th class="remove"></th></tr>
+	
+		
+</tbody>
+</table>
+</div>
+
+<script type="text/javascript">
+<!--
+//draw subscription_table
+for (var i=0; i<subscriptions.length;i++){
+	insertSub(subscriptions[i]);
+}
+//--> 
+</script> 
 
 <?php mysql_close($con); ?>

@@ -29,4 +29,6 @@ $config['number_of_events_threshold'] = 19;
 //event is not added if it is older than now "-1 month"
 $config['old_event_threshold'] = "-1 month";
 
+//maximal length of event title, rest will be cropped (facebook doesn't allow more than ~70)
+$config['max_length_title'] = 70;
 ?>

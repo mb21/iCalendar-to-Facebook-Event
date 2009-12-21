@@ -65,7 +65,6 @@ class Calendar
 	
 	public function update(){
 		//updates all events in this calendar and returns number of new events created
-
 		global $config;
 		
 		$this->ensure_parse();
@@ -83,8 +82,7 @@ class Calendar
 				
 				if($numb_events >= $config['number_of_events_threshold']){
 					//to not overstretch the facebook limits, add the other events later..
-					echo '<fb:success><fb:message>'.$numb_events.' Events created. More will be added automatically in a few minutes to not overstretch the facebook limits.</fb:message></fb:success>';
-					throw new Exception("Numver of Events limit reached.");
+					throw new Exception($numb_events." Events created. More will be added automatically in a few minutes to not overstretch the facebook limits.");
 				}
 				
 				//new event
@@ -160,7 +158,7 @@ class Calendar
 	   $fp = @fsockopen($host, '80', $errno, $errstr, $timeout );
 	
 	   if( !$fp ) {
-	      echo "Cannot retrieve $url";
+	      throw new Exception("Cannot retrieve URL.");
 	   } else {
 	      // send the necessary headers to get the file
 	      fputs($fp, "GET $path HTTP/1.0\r\n" .
@@ -234,49 +232,7 @@ class Calendar
 			$this->icsCalendar = $icalarray;
 		}
 		else{
-			echo "ics file not valid";
-		}
-	}
-	
-	
-	/////////////////////////////////
-	// METHODS USED FOR TESTING ONLY
-	/////////////////////////////////
-	
-	
-	public function print_all_parsed(){
-		//echos all events in fbEvent format
-		$this->ensure_parse();
-		$i = 0;
-		foreach ($this->icsCalendar as $event) {
-			echo $i . "<br>";
-			$i++;
-			
-			$event_obj = new Event($event,$this);
-			$event_obj->ensure_convert();
-			print_r($event_obj->fbEvent);
-			
-			echo "<br><br>";
-		}
-	}
-	
-	public function do_on($event_numbers){
-		// this method is a sceleton which
-		// expects either string "all" or array of integers
-		
-		$this->ensure_parse();	
-		if ($event_numbers == "all"){
-			$event_numbers = range(0, count($this->icsCalendar));
-		}
-		
-		global $config;
-		
-		foreach ($event_numbers as $i){
-			$event_obj = new Event($this->icsCalendar[$i],$this);
-			$event_obj->ensure_convert();
-			
-			//insert test code here
-			
+			throw new Exception("ics file not valid");
 		}
 	}
 	
