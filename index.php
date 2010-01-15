@@ -207,8 +207,8 @@ function unsubscribe(mode) {
 		<input type="button" value="Cancel" onclick="document.getElementById('unsubscribe_dialog').setStyle('display','none');" class="dialog_buttons" />
 		<input type="submit" value="Unsubscribe and remove all events from facebook" class="dialog_buttons" onclick="unsubscribe('unsub_remove'); return false;">
 		<input type="submit" value="Only unsubscribe" class="dialog_buttons" onclick="unsubscribe('only_unsub'); return false;"/>
-		<input type="text" id="unsub_sub_id" name="unsub_sub_id" style="display:none;" />
-		<input type="text" id="unsub_mode" name="unsub_mode" style="display:none;" />
+		<input type="hidden" id="unsub_sub_id" name="unsub_sub_id" />
+		<input type="hidden" id="unsub_mode" name="unsub_mode" />
 	</form>
 </div>
 </div>
@@ -328,17 +328,47 @@ function unsubscribe(mode) {
 			
 			<!-- ADVANCED OPTIONS-->
 			<div id="options_link">
-				<a href="#" onClick="show('options', '5em')">Advanced options</a>
+				<a href="#" onClick="show('options', '40em')">Advanced options</a>
 			</div>
 			<div id="options" style="display:none;">
-				<a href="#" onClick="show('options', '5em')"><img class="close" src="<?php echo _HOST_URL; ?>close.png" alt="Close"/></a>
+				<!--<a href="#" onClick="show('options', '5em')"><img class="close" src="<?php echo _HOST_URL; ?>close.png" alt="Close"/></a>-->
 				<div class="container">
-					<div id="groupid">
+					
+					<div class="adv_opt">
 						<h4>Group/Page</h4>
-						<p>If you want to create these events for a facebook group or (fan-)page, enter its id here. (check the web-address of the grouppage for gid=XXX)</p>
-						<form id="advanced_sub_form">
-							<input type="text" name="page_id" size="10" value="<?php if(isset($_GET['page_id'])) echo $_GET['page_id']; ?>">
-						</form>
+						<p>If you want to create these events for a facebook group or (fan-)page, enter its <a href="http://www.facebook.com/apps/application.php?v=info&id=164414672850" target="_blank">ID</a> here.</p>
+							<input type="text" name="page_id" size="25" value="<?php if(isset($_GET['page_id'])) echo $_GET['page_id']; ?>">
+					</div>
+					
+					<div class="adv_opt">
+						<h4>Picture</h4>
+						<p>Associate a picture with this subscription which then will be added to every event created.</p>
+						<input type="file" name="picture" size="25" name="uploadedfile">
+					</div>
+					
+					<div class="adv_opt">
+						<h4>Privacy</h4>
+						<input type="radio" name="privacy" value="open" CHECKED/>OPEN, events are open and visible to everyone.<br/>
+						<input type="radio" name="privacy" value="closed" />CLOSED, events are visible to everyone but require an invitation.<br/>
+						<input type="radio" name="privacy" value="secret" />SECRET, events are invisible to those who have not been invited.<br/>
+					</div>
+					
+					<div class="adv_opt">
+						<h4>RSVP</h4>
+						<input type="radio" name="rsvp" value="attending" CHECKED/>You are attending your events.<br/>
+						<input type="radio" name="rsvp" value="unsure" />Unsure.<br/>
+						<input type="radio" name="rsvp" value="declined" />You are not attending.<br/>
+						<p>If you choose something else than <i>attending</i>, you need to give the app <fb:prompt-permission perms="rsvp_event">permission to change your RSVP</fb:prompt-permission>.</p>
+					</div>
+					
+					<div class="adv_opt">
+						<h4>Wall</h4>
+						<input type="checkbox" name="option" value="wall" />Publish events on your profile (or that of a page/group)<br/>
+					</div>
+					
+					<div class="bottom_box">
+					<p>If you selected a picture or chose <i>Wall</i> you need to give the app <fb:prompt-permission perms="publish_stream">permission to publish</fb:prompt-permission>.</p>
+					<input type="submit" value="OK" onClick="show('options', '10em'); return false;">
 					</div>
 				</div>
 			</div>

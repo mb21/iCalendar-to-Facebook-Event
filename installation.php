@@ -36,7 +36,8 @@ url varchar(300),
 category int,
 subcategory int,
 page_id bigint,
-user_id bigint
+user_id bigint,
+picture_path varchar(30)
 )';
 if (!mysql_query($sql)){
 	echo "Error creating table: " . mysql_error();

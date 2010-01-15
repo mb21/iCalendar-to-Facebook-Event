@@ -81,6 +81,10 @@ if ($perms && isset($_POST['url'])){
 	
 		//add url to db
 		mysql_query("INSERT INTO subscriptions (sub_name, user_id, url, category, subcategory, page_id) VALUES ('$sub_name', '$user_id', '$url', '$category', '$subcategory', '$page_id')") or trigger_error(mysql_error());
+		//get sub_id from db
+		$query = mysql_query("select max(sub_id) from subscriptions");
+		$calendar->sub_data['sub_id'] = mysql_result($query, 0);
+		$_POST['sub_id'] = $calendar->sub_data['sub_id'];
 		
 		//check whether user is already in db
 		$urls = mysql_query("show tables like 'user$user_id'") or trigger_error(mysql_error());
@@ -92,8 +96,8 @@ if ($perms && isset($_POST['url'])){
 			PRIMARY KEY(event_id),
 			UID varchar(50),
 			summary varchar(300),
-			lastupdated varchar(100),
-			from_url varchar(300)
+			lastupdated varchar(20),
+			sub_id int(11)
 			)';
 			if (!mysql_query($sql)){
 				echo "Error creating table: " . mysql_error();
@@ -110,8 +114,6 @@ if ($perms && isset($_POST['url'])){
 		else{
 			$_POST['msg'] = "<div class='UIMessageBox status'><h2 class='main_message'>" . $numb_events ." Events created.</h2></div>";
 		}
-		$query = mysql_query("select max(sub_id) from subscriptions");
-		$_POST['sub_id'] = mysql_result($query, 0);
 		echo json_encode($_POST);
 	
 	}

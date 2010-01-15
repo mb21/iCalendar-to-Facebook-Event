@@ -24,7 +24,7 @@ class Calendar
 	
 	public $calendar_timezone;
 	public $sub_data;
-	// of form: $sub_data = array("url" => $url, "user_id" => $user_id, "category" => $_GET['category'], "subcategory" => $_GET['subcategory'], "page_id" => $_GET['page_id']);
+	// of form: $sub_data = array("sub_id" => $sub_id, "url" => $url, "user_id" => $user_id, "category" => $_GET['category'], "subcategory" => $_GET['subcategory'], "page_id" => $_GET['page_id']);
 	
 	public $icsCalendar;
 	public $file;
@@ -66,13 +66,14 @@ class Calendar
 		$this->ensure_parse();
 		$user_id = $this->sub_data['user_id'];
 		$url = $this->sub_data['url'];
+		$sub_id = $this->sub_data['sub_id'];
 		
 		//loop through calendar and add all new events to db as well as create new fb-events
 		$numb_events = 0;
 		foreach ($this->icsCalendar as $event) {
 			$UID = $event['UID'];
 			
-			$result = mysql_query("select * from user$user_id where from_url ='$url' and UID = '$UID'");
+			$result = mysql_query("select * from user$user_id where sub_id ='$sub_id' and UID = '$UID'");
 			if (mysql_num_rows($result) == 0){
 				//event doesn't exist yet, add it
 				
@@ -89,12 +90,12 @@ class Calendar
 
 					//create facebook event
 					$event_id = $event_obj->post_to_fb();
-					$lastupdated = isset($event['LAST-MODIFIED']) ? $event['LAST-MODIFIED'] : '';
+					$lastupdated = isset($event['LAST-MODIFIED']) ? strtotime($event['LAST-MODIFIED']) : '';
 
 					//get rid of all ' for mysql
 					$summary = str_replace("'","\'", $event['SUMMARY']);
 	
-					mysql_query("INSERT INTO user$user_id (event_id, UID, summary, lastupdated, from_url) VALUES ('$event_id', '$UID', '$summary', '$lastupdated', '$url')") or trigger_error(mysql_error());
+					mysql_query("INSERT INTO user$user_id (event_id, UID, summary, lastupdated, sub_id) VALUES ('$event_id', '$UID', '$summary', '$lastupdated', '$sub_id')") or trigger_error(mysql_error());
 					
 					$numb_events++;
 				}
@@ -102,23 +103,24 @@ class Calendar
 			else{
 				$data = mysql_fetch_array($result);
 				
-				if ( isset($event['LAST-MODIFIED']) && $event['LAST-MODIFIED'] > $data['lastupdated']  ) {
-					//event already exists, but has been updated
-					$event_id = $data['event_id'];
-					//new event
-					$event_obj = new Event($event,$this);
-					
-					// edit facebook event
-					$status = $event_obj->update_to_fb($event_id) or trigger_error('Could not update event ' . $event_id);
-					
-					$lastupdated = $event['LAST-MODIFIED'];
-					
-					//get rid of all ' for mysql
-					$summary = str_replace("'","\'", $event['SUMMARY']);
-					
-					mysql_query("UPDATE user$user_id SET summary='$summary', lastupdated='$lastupdated' WHERE event_id='$event_id' AND UID='$UID' AND from_url='$url'") or trigger_error(mysql_error());
-					
-					$numb_events++;	
+				if (isset($event['LAST-MODIFIED'])){
+					$lastupdated = strtotime($event['LAST-MODIFIED']);
+					if ($lastupdated > $data['lastupdated']  ) {
+						//event already exists, but has been updated
+						$event_id = $data['event_id'];
+						//new event
+						$event_obj = new Event($event,$this);
+						
+						// edit facebook event
+						$status = $event_obj->update_to_fb($event_id) or trigger_error('Could not update event ' . $event_id);
+						
+						//get rid of all ' for mysql
+						$summary = str_replace("'","\'", $event['SUMMARY']);
+						
+						mysql_query("UPDATE user$user_id SET summary='$summary', lastupdated='$lastupdated' WHERE event_id='$event_id'") or trigger_error(mysql_error());
+						
+						$numb_events++;	
+					}
 				}
 			}
 		}

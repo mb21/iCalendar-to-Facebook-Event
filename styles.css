@@ -39,7 +39,7 @@
 	border: solid 1px #3B5998;
 	background-color: white;
 	right: 0.5em;
-	top: 12em;
+	top: 14em;
 }
 #options_link{
 	clear:both;
@@ -55,13 +55,23 @@
 	top: 18em;
 }
 .container{
-	padding: .8em 1em;
+	padding: .8em 5px;
+	width: 400px;
 }
 .close{
 	float: right;
 }
 .inputs{
 	padding: .5em 0;
+}
+.adv_opt{
+	float: left;
+	width: 380px;
+	margin: 5px;
+}
+.bottom_box{
+	clear: both;
+	margin: 5px;
 }
 #subscribe{
 	padding-top: 1.5em;

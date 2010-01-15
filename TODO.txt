@@ -4,10 +4,22 @@
 * support recurring events in ics files
 
 * add URL from ical file with Events.edit
-* Your default RSVP: not attending. with Events.rsvp
+* Your default RSVP: not attending. with Events.rsvp (requires extended-permission rsvp_event)
 * publish to stream: $facebook->api_client->stream_publish($message, $attachment, $action_links, NULL, $page_id);
 * invite members of group/fans with Events.invite
 * add 'sub_id' field to user### table and check that everything goes smooth when the same user has twice the same url (say for different pages/groups)
 
 * display error message from update_all.php somehow to user
 * update session key in db when it's wrong
+
+
+testing on:
+- lastupdated
+- same url twice (e.g. once on page, and once as user)
+
+procedure to go online with new version:
+* offline
+* cron job off
+* db backup
+* from_url-to-sub_id.php
+* update_time.php

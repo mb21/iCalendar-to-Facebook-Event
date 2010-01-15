@@ -44,7 +44,7 @@ $numb_events = 0;
 $numb_subs = 0;
 
 while($row = mysql_fetch_assoc($result)){
-	$sub_data = array("url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
+	$sub_data = array("sub_id" => $row['sub_id'], "url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
 	
 	echo "<br>try ".$row['url']."<br>";
 	

@@ -45,7 +45,7 @@ if (isset($_POST['unsub_sub_id'])){
 				
 				$query = mysql_query("select url from subscriptions where user_id = '$user_id' and sub_id ='$sub_id'") or trigger_error(mysql_error());
 				$url = mysql_result($query, 0);
-				$result = mysql_query("select event_id from user$user_id where from_url='$url'") or trigger_error(mysql_error());
+				$result = mysql_query("select event_id from user$user_id where sub_id='$sub_id'") or trigger_error(mysql_error());
 				$numb_events = 0;
 				while($row = mysql_fetch_array($result)){
 					//try to not over-do facebook...
@@ -59,7 +59,7 @@ if (isset($_POST['unsub_sub_id'])){
 				}
 				
 				//remove events from db
-				mysql_query("DELETE FROM user$user_id WHERE from_url='$url'");
+				mysql_query("DELETE FROM user$user_id WHERE sub_id='$sub_id'");
 		}
 		
 		//remove subscription from db
