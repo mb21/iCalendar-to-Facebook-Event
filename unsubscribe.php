@@ -1,3 +1,4 @@
+
 <?php
 /*
     This file is part of iCalendar-to-Facebook-Event.
@@ -70,15 +71,15 @@ if (isset($_POST['unsub_sub_id'])){
 		$response["sub_id"] = $sub_id;
 		$response["success"] = "1";
 		if ($only_unsub){
-			$response['msg'] = "<div class='UIMessageBox status'><h2 class='main_message'>You have successfully unsubscribed.</h2></div>";
+			$response['msg'] = "<div class='clean-ok'>You have successfully unsubscribed.</div>";
 		}
 		else{
-			$response['msg'] = "<div class='UIMessageBox status'><h2 class='main_message'>You have successfully unsubscribed and all events on facebook from that subscription have been removed.</h2></div>";
+			$response['msg'] = "<div class='clean-ok'>You have successfully unsubscribed and all events on facebook from that subscription have been removed.</div>";
 		}
 		echo json_encode($response);
 	}
 	catch(Exception $e){
-		echo "{'msg':'<div class=\'UIMessageBox error\'><h2 class=\'main_message\'>" . $e->getMessage() ."</h2></div>', 'success' = '0'}";
+		echo "{'msg':'<div class=\'clean-error\'>" . $e->getMessage() ."</div>', 'success' = '0'}";
 	}
 }
 

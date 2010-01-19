@@ -13,7 +13,8 @@ $user_id = $facebook->require_login();
 //whether offline_access and create_event permissions are set
 $perms = $facebook->api_client->users_hasAppPermission('offline_access') && $facebook->api_client->users_hasAppPermission('create_event');
 
-$perms= 1;
+//$perms = TRUE; //   <<<<-----
+//$user_id = "713344833";
 
 //Connect to Database
 $con = mysql_connect($host,$db_user,$db_password);
@@ -32,13 +33,15 @@ function __autoload($class_name) {
 // PARSE NEW SUBSCRIPTION
 /////////////////////////////////
 
+//$_POST = array("adv_update" => "new","rsvp" => "attending","privacy" => "open","uploadedfile" => "","page_id" => "","adv_subcategory" => 29,"adv_category" => 8,"adv_sub_name" => "","sub_id" => "","subcategory" => "29","category" => "8","url" => "http://ics-to-fbevent.project21.ch/basic.ics","sub_name" => "nay");
+
 if ($perms && isset($_POST['url'])){
 	$url = $_POST['url'];
 	$page_id = $_POST['page_id'];
 	
 	//check subscription name
 	if (mb_strlen($_POST['sub_name']) == 0){
-		echo '{ "msg":"<div class=\'UIMessageBox error\'><h2 class=\'main_message\'>You need to give your subscription a name.</h2></div>"}';
+		echo '{ "msg":"<div class=\'clean-error\'>You need to give your subscription a name.</div>"}';
 		exit;
 	}
 	else{
@@ -48,7 +51,7 @@ if ($perms && isset($_POST['url'])){
 	
 	//check category
 	if ($_POST['category'] == "" || $_POST['subcategory'] == ""){
-		echo '{ "msg":"<div class=\'UIMessageBox error\'><h2 class=\'main_message\'>You need to specify a category and subcategory.</h2></div>"}';
+		echo '{ "msg":"<div class=\'clean-error\'>You need to specify a category and subcategory.</div>"}';
 		exit;
 	}
 	else{
@@ -64,17 +67,17 @@ if ($perms && isset($_POST['url'])){
 	
 		//check url
 		if (!$calendar->url_valid()){
-			echo '{ "msg":"<div class=\'UIMessageBox error\'><h2 class=\'main_message\'>URL doesn\'t have correct form. Please include http:// etc.</h2></div>"}';
+			echo '{ "msg":"<div class=\'clean-error\'>URL doesn\'t have correct form. Please include http:// etc.</div>"}';
 			exit;
 		}
 		
 		//check file
 		if (!$calendar->file_valid()){
-			echo '{ "msg":"<div class=\'UIMessageBox error\'><h2 class=\'main_message\'>File doesn\'t seem to be a valid <a href=\"http://en.wikipedia.org/wiki/ICalendar\" target=\"_blank\">iCalendar</a> file.</h2></div>"}';
+			echo '{ "msg":"<div class=\'clean-error\'>File doesn\'t seem to be a valid <a href=\"http://en.wikipedia.org/wiki/ICalendar\" target=\"_blank\">iCalendar</a> file.</div>"}';
 			exit;
 		}
 		if (!$calendar->file_valid_event()){
-			echo '{ "msg":"<div class=\'UIMessageBox error\'><h2 class=\'main_message\'>File doesn\'t seem to contain any events. Calendars that contain only free/busy information are not supported.</h2></div>"}';
+			echo '{ "msg":"<div class=\'clean-error\'>File doesn\'t seem to contain any events. Calendars that contain only free/busy information are not supported.</div>"}';
 			exit;
 		}
 		
@@ -109,16 +112,16 @@ if ($perms && isset($_POST['url'])){
 		$numb_events = $calendar->update();
 		
 		if ($numb_events == 1){
-			$_POST['msg'] = "<div class='UIMessageBox status'><h2 class='main_message'>1 Event created.</h2></div>";
+			$_POST['msg'] = "<div class='clean-ok'>1 Event created.</div>";
 		}
 		else{
-			$_POST['msg'] = "<div class='UIMessageBox status'><h2 class='main_message'>" . $numb_events ." Events created.</h2></div>";
+			$_POST['msg'] = "<div class='clean-ok'>" . $numb_events ." Events created.</div>";
 		}
 		echo json_encode($_POST);
 	
 	}
 	catch(Exception $e){
-		echo "{'msg':'<div class=\'UIMessageBox error\'><h2 class=\'main_message\'>" . $e->getMessage() ."</h2></div>'}";
+		echo "{'msg':'<div class=\'clean-error\'>" . $e->getMessage() ."</div>'}";
 	}
 
 }

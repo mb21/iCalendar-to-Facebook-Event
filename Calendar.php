@@ -26,7 +26,7 @@ class Calendar
 	public $sub_data;
 	// of form: $sub_data = array("sub_id" => $sub_id, "url" => $url, "user_id" => $user_id, "category" => $_GET['category'], "subcategory" => $_GET['subcategory'], "page_id" => $_GET['page_id']);
 	
-	public $icsCalendar;
+	public $iCalendar;
 	public $file;
 	
 	///////////////////////////////
@@ -60,7 +60,7 @@ class Calendar
 		return preg_match('/BEGIN:VEVENT/', $this->file);
 	}
 	
-	public function update(){
+	public function update($force = FALSE){
 		//updates all events in this calendar and returns number of new events created
 		global $config;		
 		$this->ensure_parse();
@@ -70,11 +70,18 @@ class Calendar
 		
 		//loop through calendar and add all new events to db as well as create new fb-events
 		$numb_events = 0;
-		foreach ($this->icsCalendar as $event) {
-			$UID = $event['UID'];
-			
+		while( $event = $this->iCalendar->getComponent( "vevent" )) { 
+			$UID = $event->getProperty('UID');
+                        $lm = $event->getProperty('LAST-MODIFIED');
+                        if ($lm){
+                            $lastupdated = $event->_date2timestamp($lm);
+			}
+                        else {
+                            $lastupdated = '';
+                        }
+
 			$result = mysql_query("select * from user$user_id where sub_id ='$sub_id' and UID = '$UID'");
-			if (mysql_num_rows($result) == 0){
+			if (mysql_num_rows($result) == 0 && !$force){
 				//event doesn't exist yet, add it
 				
 				if($numb_events > $config['number_of_events_threshold']){
@@ -90,10 +97,9 @@ class Calendar
 
 					//create facebook event
 					$event_id = $event_obj->post_to_fb();
-					$lastupdated = isset($event['LAST-MODIFIED']) ? strtotime($event['LAST-MODIFIED']) : '';
-
+					
 					//get rid of all ' for mysql
-					$summary = str_replace("'","\'", $event['SUMMARY']);
+					$summary = str_replace("'","\'", $event->getProperty('SUMMARY'));
 	
 					mysql_query("INSERT INTO user$user_id (event_id, UID, summary, lastupdated, sub_id) VALUES ('$event_id', '$UID', '$summary', '$lastupdated', '$sub_id')") or trigger_error(mysql_error());
 					
@@ -101,12 +107,12 @@ class Calendar
 				}
 			}
 			else{
+				//event already exists on fb or update is being forced
 				$data = mysql_fetch_array($result);
 				
-				if (isset($event['LAST-MODIFIED'])){
-					$lastupdated = strtotime($event['LAST-MODIFIED']);
-					if ($lastupdated > $data['lastupdated']  ) {
-						//event already exists, but has been updated
+				if ((!$lastupdated == '') || $force) {
+					if ( ($lastupdated > $data['lastupdated']) || $force ) {
+						//event already exists, but has been changed
 						$event_id = $data['event_id'];
 						//new event
 						$event_obj = new Event($event,$this);
@@ -115,7 +121,7 @@ class Calendar
 						$status = $event_obj->update_to_fb($event_id) or trigger_error('Could not update event ' . $event_id);
 						
 						//get rid of all ' for mysql
-						$summary = str_replace("'","\'", $event['SUMMARY']);
+						$summary = str_replace("'","\'", $event->getProperty('SUMMARY'));
 						
 						mysql_query("UPDATE user$user_id SET summary='$summary', lastupdated='$lastupdated' WHERE event_id='$event_id'") or trigger_error(mysql_error());
 						
@@ -138,7 +144,7 @@ class Calendar
 	
 	public function ensure_parse(){
 		//parses the file if not already done
-		if(!isset($this->icsCalendar)){
+		if(!isset($this->iCalendar)){
 			$this->parse();
 		}
 	}
@@ -208,54 +214,14 @@ class Calendar
 		///////////////////////////////
 
 		$this->ensure_file();
-		if ($this->file_valid()){
-			$ical = $this->file;
-			
-			// Un-fold
-			$ical = preg_replace( '/[\r\n]+ /', '', $ical );
-	
-			//get timezone
-			if (preg_match('/(X-WR-TIMEZONE.*?\\n)/si', $ical, $result)){
-				$tmpholderarray = explode(":",$result[0], 2);
-				preg_match('/(\S*)/', $tmpholderarray[1], $result);
-				$this->calendar_timezone = $result[0];
-			}
 		
-			preg_match_all('/(BEGIN:VEVENT.*?END:VEVENT)/si', $ical, $result, PREG_PATTERN_ORDER);
-			for ($i = 0; $i < count($result[0]); $i++) {
-				$tmpbyline = preg_split( '/[\r\n]+/', $result[0][$i] );
-				
-				foreach ($tmpbyline as $item) {
-					$tmpholderarray = explode(":",$item);
-					if (count($tmpholderarray) >1) { 
-						$majorarray[$tmpholderarray[0]] = $tmpholderarray[1];
-					}
-					
-				}
-				
-				// Decode encoded characters
-				$encoded = array( '\\\\', '\,', '\;', '\:' );
-				$decoded = array( '\\', ',', ';', ':' );
-				if(isset($majorarray['LOCATION'])) {
-					$majorarray['LOCATION'] = str_replace($encoded, $decoded, $majorarray['LOCATION']);
-				}
-				if(isset($majorarray['SUMMARY'])) {
-					$majorarray['SUMMARY'] = str_replace($encoded, $decoded, $majorarray['SUMMARY']);
-				}
-				if(isset($majorarray['DESCRIPTION'])) {
-					$majorarray['DESCRIPTION'] = str_replace($encoded, $decoded, $majorarray['DESCRIPTION']);
-					$majorarray['DESCRIPTION'] = str_replace("\\n", "\r\n", $majorarray['DESCRIPTION']);
-					$majorarray['DESCRIPTION'] = strip_tags($majorarray['DESCRIPTION']);
-				}
-			
-				$icalarray[] = $majorarray;
-				unset($majorarray);		 
-			}
-			$this->icsCalendar = $icalarray;
-		}
-		else{
-			throw new Exception("ics file not valid");
-		}
+		$vcalendar = new vcalendar();
+		$vcalendar->setConfig( "filestring", $this->file );
+                $vcalendar->setConfig( "newlinechar", "\r\n" );
+		if ( FALSE === $vcalendar->parse()){
+                    throw new Exception("Error when parsing ics file.");
+                }
+		$this->iCalendar = $vcalendar;
 	}
 	
 	

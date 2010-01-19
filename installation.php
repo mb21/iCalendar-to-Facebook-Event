@@ -37,7 +37,10 @@ category int,
 subcategory int,
 page_id bigint,
 user_id bigint,
-picture_path varchar(30)
+picture_path varchar(60),
+privacy char(6),
+rsvp char(9),
+wall boolean
 )';
 if (!mysql_query($sql)){
 	echo "Error creating table: " . mysql_error();

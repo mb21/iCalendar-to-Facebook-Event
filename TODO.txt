@@ -16,6 +16,7 @@
 testing on:
 - lastupdated
 - same url twice (e.g. once on page, and once as user)
+- change adv_options retroactively
 
 procedure to go online with new version:
 * offline
