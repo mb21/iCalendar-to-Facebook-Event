@@ -34,7 +34,7 @@ mysql_query("SET CHARACTER SET 'utf8';", $con);
 mysql_select_db($database_name,$con);
 
 function __autoload($class_name) {
-    require_once $class_name . '.php';
+	require_once $class_name . '.php';
 }
 
 //update all
@@ -43,29 +43,29 @@ $result = mysql_query("SELECT * FROM subscriptions") or trigger_error(mysql_erro
 $numb_events = 0;
 $numb_subs = 0;
 
-while($row = mysql_fetch_assoc($result)){
+while($row = mysql_fetch_assoc($result)) {
 	$sub_data = array("sub_id" => $row['sub_id'], "url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
 	if ($sub_data['page_id'] == 0)
-            $sub_data['page_id'] = '';
+		$sub_data['page_id'] = '';
 
 	echo "<br>try ".$row['url']."<br>";
-	
-	try{
+
+	try {
 		$numb_subs++;
-		
+
 		$calendar  = new Calendar($sub_data);
 		$newevs = $calendar->update();
-		
+
 		$numb_events = $numb_events + $newevs;
-		
-		echo "done";
-	}catch(Exception $e){
+
+		echo "<br>done";
+	}catch(Exception $e) {
 		$error = $e->getMessage().' Error code:'.$e->getCode();
 		echo $error;
 	}
 }
 
-echo "<br><br>Checked ".$numb_subs." subscriptions, ". $numb_events . " events created.";
+echo "<br><br>".$numb_subs." subscriptions checked, ". $numb_events . " events created or updated.";
 
 mysql_close($con);
 ?>

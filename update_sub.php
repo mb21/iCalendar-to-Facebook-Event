@@ -57,7 +57,9 @@ try{
 
 }
 catch(Exception $e){
-        echo "{'msg':'<div class=\'clean-error\'>" . $e->getMessage() ."</div>'}";
+        $response['msg'] = "<div class='clean-error'>" . $e->getMessage() ."</div>";
+        $response['success'] = 0;
+	echo json_encode($response);
 }
 
 mysql_close($con);

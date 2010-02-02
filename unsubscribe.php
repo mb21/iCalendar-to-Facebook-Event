@@ -1,4 +1,3 @@
-
 <?php
 /*
     This file is part of iCalendar-to-Facebook-Event.
@@ -36,50 +35,69 @@ mysql_query("SET NAMES 'utf8';", $con);
 mysql_query("SET CHARACTER SET 'utf8';", $con);
 mysql_select_db($database_name,$con);
 
-if (isset($_POST['unsub_sub_id'])){
+if (isset($_POST['unsub_sub_id'])) {
 	$only_unsub = ($_POST['unsub_mode'] == 'only_unsub');
 	$sub_id = $_POST['unsub_sub_id'];
 
-	try{
-		if (!$only_unsub){
-				//remove all events on fb
-				
-				$query = mysql_query("select url from subscriptions where user_id = '$user_id' and sub_id ='$sub_id'") or trigger_error(mysql_error());
-				$url = mysql_result($query, 0);
-				$result = mysql_query("select event_id from user$user_id where sub_id='$sub_id'") or trigger_error(mysql_error());
-				$numb_events = 0;
-				while($row = mysql_fetch_array($result)){
-					//try to not over-do facebook...
-					if($numb_events >= $config['number_of_events_threshold']){
-						$numb_events = 0;
-						print('<fb:redirect url="'._SITE_URL.'limit_reached.php"/>');
-						sleep(5);
-					}
-						$facebook->api_client->events_cancel($row['event_id']);
-						$numb_events++;
+	try {
+		if (!$only_unsub) {
+			//remove all events on fb
+
+			$query = mysql_query("select url from subscriptions where user_id = '$user_id' and sub_id ='$sub_id'") or trigger_error(mysql_error());
+			$url = mysql_result($query, 0);
+			$result = mysql_query("select event_id from user$user_id where sub_id='$sub_id'") or trigger_error(mysql_error());
+			$numb_events = 0;
+			while($row = mysql_fetch_array($result)) {
+				//try to not over-do facebook...
+				if($numb_events >= $config['number_of_events_threshold']) {
+					ob_start();
+					$response["sub_id"] = $sub_id;
+					$response["success"] = "1";
+					$response["msg"] = "<div class='clean-ok'>" .$numb_events. " Events cancelled. More will be done in a few seconds to not stretch the facebook limits.</div>";
+					echo json_encode($response);
+
+					// get the size of the output
+					$size = ob_get_length();
+
+					// send headers to tell the browser to close the connection
+					header("Content-Length: $size");
+					header('Connection: close');
+
+					// flush all output
+					ob_end_flush();
+					ob_flush();
+					flush();
+
+					$numb_events = 0;
+					sleep($config['sleep_time']);
 				}
-				
-				//remove events from db
-				mysql_query("DELETE FROM user$user_id WHERE sub_id='$sub_id'");
+				$facebook->api_client->events_cancel($row['event_id']);
+				$numb_events++;
+			}
+
+			//remove events from db
+			mysql_query("DELETE FROM user$user_id WHERE sub_id='$sub_id'");
 		}
-		
+
 		//remove subscription from db
 		mysql_query("DELETE FROM subscriptions WHERE sub_id='$sub_id'");
-	
-		
+
+
 		//AJAX response
 		$response["sub_id"] = $sub_id;
 		$response["success"] = "1";
-		if ($only_unsub){
+		if ($only_unsub) {
 			$response['msg'] = "<div class='clean-ok'>You have successfully unsubscribed.</div>";
 		}
-		else{
+		else {
 			$response['msg'] = "<div class='clean-ok'>You have successfully unsubscribed and all events on facebook from that subscription have been removed.</div>";
 		}
 		echo json_encode($response);
 	}
-	catch(Exception $e){
-		echo "{'msg':'<div class=\'clean-error\'>" . $e->getMessage() ."</div>', 'success' = '0'}";
+	catch(Exception $e) {
+		$response['msg'] = "<div class='clean-error'>" . $e->getMessage() ."</div>";
+		$response['success'] = 0;
+		echo json_encode($response);
 	}
 }
 

@@ -16,128 +16,120 @@
     along with iCalendar-to-Facebook-Event.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-class Event
-{
-    // property declaration
-    public $calendar;
-    
-    public $fbEvent;
-    private $vEvent;
+class Event {
+	// property declaration
+	public $calendar;
+
+	public $fbEvent;
+	private $vEvent;
 
 
 	///////////////////////////////
 	//PUBLIC METHODS
-	///////////////////////////////	
+	///////////////////////////////
 
-    function __construct($event, $calendar){
-    	$this->vEvent = $event;
-    	$this->calendar = $calendar;
-    }
-    
-    public function post_to_fb(){
-    	global $facebook;
-    	
-    	//post this event to facebook
-    	$this->ensure_convert();
-    	
-    	$user_id = $this->calendar->sub_data['user_id'];
-    	
-    	//get session key
-    	$query = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
-		$session_key = mysql_result($query, 0);
+	function __construct($event, $calendar) {
+		$this->vEvent = $event;
+		$this->calendar = $calendar;
+	}
 
-		$facebook->set_user($user_id, $session_key);
-		
-		//post array to facebook
-		$event_id=$facebook->api_client->events_create(json_encode($this->fbEvent));
-
-                if ($event_id == 0)
-                    throw new Exception("Error posting event to fb");
-		return $event_id;
-    }
-    
-    public function ensure_convert(){
-    	if(!isset($this->fbEvent)){
-    		$this->convert();
-    	}
-    }
-    
-	public function update_to_fb($eid){
+	public function post_to_fb() {
 		global $facebook;
-		
+
 		//post this event to facebook
 		$this->ensure_convert();
-		
+
 		$user_id = $this->calendar->sub_data['user_id'];
-		
+
 		//get session key
 		$query = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
 		$session_key = mysql_result($query, 0);
 
 		$facebook->set_user($user_id, $session_key);
-          
+
+		//post array to facebook
+		$event_id=$facebook->api_client->events_create(json_encode($this->fbEvent));
+
+		return $event_id;
+	}
+
+	public function ensure_convert() {
+		if(!isset($this->fbEvent)) {
+			$this->convert();
+		}
+	}
+
+	public function update_to_fb($eid) {
+		global $facebook;
+
+		//post this event to facebook
+		$this->ensure_convert();
+
+		$user_id = $this->calendar->sub_data['user_id'];
+
+		//get session key
+		$query = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
+		$session_key = mysql_result($query, 0);
+
+		$facebook->set_user($user_id, $session_key);
+
 		//post array to facebook
 		$status=$facebook->api_client->events_edit($eid, json_encode($this->fbEvent));
-		
+
 		return $status;
 	}
-    
-	public function get_start_time(){
-		//returns unix timestamp
-                $time = $this->vEvent->getProperty('DTSTART');
-		return $this->vEvent->_date2timestamp($time);
-	}
-    
-    ///////////////////////////////
-	//PRIVATE METHODS
-	///////////////////////////////	
-    
-    private function convert(){
-    	//converts vEvent to fbEvent
-    	global $config;
-    	
+
+
+///////////////////////////////
+//PRIVATE METHODS
+///////////////////////////////	
+
+	private function convert() {
+		//converts vEvent to fbEvent
+		global $config;
+
 		//category
 		$event['category'] = $this->calendar->sub_data['category'];
 		//subcategory
 		$event['subcategory'] = $this->calendar->sub_data['subcategory'];
 		//host
-		$event['host'] = $this->calendar->sub_data['user_id'];	
+		$event['host'] = $this->calendar->sub_data['user_id'];
 		//page_id
 		$event['page_id'] = $this->calendar->sub_data['page_id'];
-		
-		
+
+
 		//location
-                $location = $this->vEvent->getProperty('LOCATION');
-   		if (!$location || $location == '')
+		$location = $this->vEvent->getProperty('LOCATION');
+		if (!$location || $location == '')
 			$event['location'] = ' ';
 		else
 			$event['location'] = $location;
-		
+
 		//summary
-                $summary = $this->vEvent->getProperty('SUMMARY');
+		$summary = $this->vEvent->getProperty('SUMMARY');
 		if (!$summary)
 			$event['name'] = "unknown name";
-		else{
+		else {
 			//facebook doesn't allow title names that are too long
 			$event['name'] = mb_substr($summary, 0, $config['max_length_title']);
 		}
-				
+
 		//description
-                $description = $this->vEvent->getProperty('DESCRIPTION');
+		$description = $this->vEvent->getProperty('DESCRIPTION');
 		if ($description)
 			$event['description'] = $description;
-		
+
 		//start_time
 		$event["start_time"] = $this->to_facebook_time("DTSTART");
-		
+
 		//end_time
 		$event["end_time"] = $this->to_facebook_time("DTEND");
-		
+
 		$this->fbEvent = $event;
-    }
-	
-	
-	private function to_facebook_time($key){
+	}
+
+
+	private function to_facebook_time($key) {
 		//takes an ics-key (like dtstart or dtend) and outputs this in the time-format facebook currently uses in Events.create
 		/*
 		from http://wiki.developers.facebook.com/index.php/Events.create:
@@ -150,55 +142,48 @@ class Event
 		(depending on whether its standard or daylight saving time over in sunny
 		california)
 		*/
-		
+
 		date_default_timezone_set('UTC');
 
 		$dt = $this->vEvent->getProperty($key, FALSE, TRUE);
 		$time_arr = $dt["value"];
 		$time = $time_arr["year"] . "-" .$time_arr["month"]."-".$time_arr["day"];
-		if (isset($time_arr["hour"])){
+		if (isset($time_arr["hour"])) {
 			$time .= " ".$time_arr["hour"].":".$time_arr["min"].":".$time_arr["sec"];
 		}
-		
-		if(!isset($dt["params"]["TZID"])){
-			//if no timezone specified check for calendar timezone
-                        $vtimezone = $this->calendar->iCalendar->getComponent('vtimezone');
-			if ($vtimezone){
-                            $calendar_tz = $vtimezone->getProperty("TZID");
-                        }
-			else{
-                            $vtimezone = $this->calendar->iCalendar->getProperty( "X-WR-TIMEZONE" );
-                            if ($vtimezone)
-                                $calendar_tz = $vtimezone[1];
-                        }
 
-			if (isset($calendar_tz) && isset($time_arr["tz"]) && $time_arr["tz"] == "Z"){
+		if(!isset($dt["params"]["TZID"])) {
+			//if no timezone specified check for calendar timezone
+			$calendar_tz = $this->calendar->calendar_timezone;
+
+			if (isset($calendar_tz) && isset($time_arr["tz"]) && $time_arr["tz"] == "Z") {
 				//if calendar timezone is set and event is in UTC we assume that the user
 				// wants his event time displayed in the calendar timezone (presumably
 				// his local timezone) and not in UTC. Thus we convert it.
 				$user_tz = new DateTimeZone($calendar_tz);
 				$datetime = new DateTime($time);
 				$datetime->setTimezone($user_tz);
-				$time = $datetime->format("Y-m-d H:i:s");;
+				$time = $datetime->format("Y-m-d H:i:s");
+				;
 			}
 		}
-		
-		
-		
-	    // Create new date object from $time in UTC (default TZ)
-	    $datetime = new DateTime($time);    
-	    // Create Los Angeles timezone
-	    $la_time = new DateTimeZone('America/Los_Angeles');
-	    // Set LA timezone to the date object
-	    $datetime->setTimezone($la_time);
-	    // Calculate the timezone offset (DST included during calculations)
-	    $offset = $datetime->getOffset();
-	    // Facebook adds its timezone offset to the received timestamp
-	    // Cheat facebook by adding the offset he is going to subtract
-	    $offset = $offset*(-1);
-	    $datetime->modify($offset." seconds");
-	    // Return Unix timestamp
-	    return $datetime->format("U");
+
+
+
+		// Create new date object from $time in UTC (default TZ)
+		$datetime = new DateTime($time);
+		// Create Los Angeles timezone
+		$la_time = new DateTimeZone('America/Los_Angeles');
+		// Set LA timezone to the date object
+		$datetime->setTimezone($la_time);
+		// Calculate the timezone offset (DST included during calculations)
+		$offset = $datetime->getOffset();
+		// Facebook adds its timezone offset to the received timestamp
+		// Cheat facebook by adding the offset he is going to subtract
+		$offset = $offset*(-1);
+		$datetime->modify($offset." seconds");
+		// Return Unix timestamp
+		return $datetime->format("U");
 	}
 
 }

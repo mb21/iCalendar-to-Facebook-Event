@@ -26,6 +26,9 @@ $db_password = '';
 //do not add more than "number" events at the same time to not overstretch the facebook limits
 $config['number_of_events_threshold'] = 19; 
 
+//time to sleep in seconds before processing more events (fb limits)
+$config['sleep_time'] = 5;
+
 //event is not added if it is older than now "-1 month"
 $config['old_event_threshold'] = "-1 month";
 

@@ -72,7 +72,6 @@ class vcalendar {
   var $directory;
   var $filename;
   var $url;
-  var $fileArray;
   var $delimiter;
   var $nl;
   var $format;
@@ -667,11 +666,6 @@ class vcalendar {
         $parts     = pathinfo( $value );
         return $this->setConfig( 'filename',  $parts['basename'] );
         break;
-      case 'FILESTRING':
-        //expects a string containing the entire ics-file
-        //split string into array with an element being a line
-        $this->fileArray = preg_split("/(\r\n|\n|\r)/", $value);
-      break;
     }
     if( !$res ) return FALSE;
     if( isset( $subcfg ) && !empty( $this->components )) {
@@ -1206,6 +1200,76 @@ class vcalendar {
     return 0;
   }
 /**
+ * get a remote file without fopen
+ *
+ * @author Mauro Bieg
+ * @since 2010-02-02
+ * @param string URL
+ * @return array
+ *
+ */
+	function getFile($url){
+		// get the host name and url path
+		$parsedUrl = parse_url($url);
+		$host = $parsedUrl['host'];
+		if (isset($parsedUrl['path'])) {
+			$path = $parsedUrl['path'];
+		} else {
+			// the url is pointing to the host like http://www.mysite.com
+			$path = '/';
+		}
+
+		if (isset($parsedUrl['query'])) {
+			$path .= '?' . $parsedUrl['query'];
+		}
+
+		if (isset($parsedUrl['port'])) {
+			$port = $parsedUrl['port'];
+		} else {
+			// most sites use port 80
+			$port = '80';
+		}
+
+		$timeout = 10;
+		$response = '';
+
+		// connect to the remote server
+		$fp = @fsockopen($host, '80', $errno, $errstr, $timeout );
+
+		if( !$fp ) {
+			throw new Exception("Cannot retrieve URL.");
+		} else {
+			// send the necessary headers to get the file
+			fputs($fp, "GET $path HTTP/1.0\r\n" .
+				"Host: $host\r\n" .
+				"Connection: Close\r\n\r\n");
+
+			// retrieve the response from the remote server
+			while ( $line = fread( $fp, 4096 ) ) {
+				$response .= $line;
+			}
+
+			fclose( $fp );
+
+			// strip the headers
+			$pos      = mb_strpos($response, "\r\n\r\n");
+			$response = mb_substr($response, $pos + 4);
+		}
+
+
+
+
+		// split the file content in an array by lines
+		$fileArray = preg_split("/" . $this->nl ."/", $response);
+
+		//append new line chars that were lost on preg_split
+		for ($i=0; $i < count($fileArray); $i++){
+		  $fileArray[$i] .= $this->nl;
+		}
+
+		return $fileArray;
+	}
+/**
  * parse iCal file into vcalendar, components, properties and parameters
  *
  * @author Kjell-Inge Gustafsson <ical@kigkonsult.se>
@@ -1215,13 +1279,10 @@ class vcalendar {
  *
  */
   function parse( $filename=FALSE ) {
-    $filestring = FALSE;
     if( !$filename ) {
             /* directory/filename previous set via setConfig directory+filename / url */
       if( FALSE === ( $filename = $this->getConfig( 'url' )))
         $filename = $this->getConfig( 'dirfile' );
-      if( $this->getConfig( 'url' ) == null )
-              $filestring = TRUE;
     }
     elseif(( 'http://'   == strtolower( substr( $filename, 0, 7 ))) ||
            ( 'webcal://' == strtolower( substr( $filename, 0, 9 ))))  {
@@ -1240,7 +1301,7 @@ class vcalendar {
       if( !$this->setConfig( 'filename', $parts['basename'] ))
         return FALSE;                 /* err 4 */
     }
-    if( 'http://' != substr( $filename, 0, 7) && !$filestring) {
+    if( 'http://' != substr( $filename, 0, 7 )) {
             /* local file error tests */
       if( !is_file( $filename ))      /* err 5 */
         return FALSE;
@@ -1251,11 +1312,13 @@ class vcalendar {
       clearstatcache();
     }
             /* READ FILE */
-    if( $filestring )
-        $rows = $this->fileArray;
+    if (!$this->getConfig( 'url' ) || ini_get('allow_url_fopen')){
+	    //if local file or url_fopen is allowed on the system
+	    if( FALSE === ( $rows = file( $filename )))
+		 return FALSE;                   /* err 1 */
+    }
     else{
-        if( FALSE === ( $rows = file( $filename )))
-            return FALSE;  /* err 1 */
+	    $rows = $this->getFile($filename);
     }
             /* identify BEGIN:VCALENDAR, MUST be first row */
     if( 'BEGIN:VCALENDAR' != strtoupper( trim( $rows[0] )))
@@ -6292,7 +6355,6 @@ class calendarComponent {
  * @return bool FALSE if error occurs during parsing
  *
  */
-  
   function parse( $unparsedtext=null ) {
     if( $unparsedtext ) {
       $this->unparsed = array();
