@@ -128,18 +128,18 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 
 	function close_options(){
 		//check permissions
-		var div_id = document.getElementById('adv_msg_div');
-		var form = document.getElementById('sub_form');
-		div_id.setInnerXHTML('<img src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..."/>');
-
-		var ajax = new Ajax();
-		ajax.responseType = Ajax.JSON;
-		ajax.requireLogin = true;
-		ajax.onerror = function() {
-			div_id.setInnerXHTML('<div class="clean-error">No response from server. Please try again.</div>');
-		}
-		ajax.ondone = function(data) {
-			if (data.msg == "success"){
+//		var div_id = document.getElementById('adv_msg_div');
+//		var form = document.getElementById('sub_form');
+//		div_id.setInnerXHTML('<img src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..."/>');
+//
+//		var ajax = new Ajax();
+//		ajax.responseType = Ajax.JSON;
+//		ajax.requireLogin = true;
+//		ajax.onerror = function() {
+//			div_id.setInnerXHTML('<div class="clean-error">No response from server. Please try again.</div>');
+//		}
+//		ajax.ondone = function(data) {
+//			if (data.msg == "success"){
 				if (which_options_open > 0){
 					//send update to server
 					do_submit('sub_form', '<?php echo _HOST_URL . 'update_sub.php'; ?>','messages');
@@ -151,19 +151,19 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 					document.getElementById("adv_update").setStyle('display','block');
 					document.getElementById("messages").setInnerXHTML("<span></span>");
 				}
-				div_id.setInnerXHTML("<span></span>");
+//				div_id.setInnerXHTML("<span></span>");
 				which_options_open = 0;
 				toggle_view("options");
-			}
-			else{
-				if (data.msg == "publish")
-					div_id.setInnerFBML(perms_publish);
-				else if(data.msg == "rsvp")
-					div_id.setInnerFBML(perms_rsvp);
-			}
-		}
-		var formdata = form.serialize();
-		ajax.post('<?php echo _HOST_URL . 'update_sub_check.php'; ?>', formdata);
+//			}
+//			else{
+//				if (data.msg == "publish")
+//					div_id.setInnerFBML(perms_publish);
+//				else if(data.msg == "rsvp")
+//					div_id.setInnerFBML(perms_rsvp);
+//			}
+//		}
+//		var formdata = form.serialize();
+//		ajax.post('<?php echo _HOST_URL . 'update_sub_check.php'; ?>', formdata);
 	}
 
 	function show_unsubscribe(sub_id, sub_name){

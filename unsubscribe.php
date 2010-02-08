@@ -35,12 +35,21 @@ mysql_query("SET NAMES 'utf8';", $con);
 mysql_query("SET CHARACTER SET 'utf8';", $con);
 mysql_select_db($database_name,$con);
 
+ini_set('max_execution_time', 800);
+ignore_user_abort(true);
+
+$error_occured = FALSE;
+
 if (isset($_POST['unsub_sub_id'])) {
 	$only_unsub = ($_POST['unsub_mode'] == 'only_unsub');
 	$sub_id = $_POST['unsub_sub_id'];
 
 	try {
-		if (!$only_unsub) {
+		if ($only_unsub) {
+			//remove all events from db
+			mysql_query("DELETE FROM user$user_id WHERE sub_id='$sub_id'");
+		}
+		else{
 			//remove all events on fb
 
 			$query = mysql_query("select url from subscriptions where user_id = '$user_id' and sub_id ='$sub_id'") or trigger_error(mysql_error());
@@ -71,17 +80,24 @@ if (isset($_POST['unsub_sub_id'])) {
 					$numb_events = 0;
 					sleep($config['sleep_time']);
 				}
-				$facebook->api_client->events_cancel($row['event_id']);
+				try{
+					$facebook->api_client->events_cancel($row['event_id']);
+				}
+				catch (Exception $e){
+					// log error: $e->getMessage().' Error code:'.$e->getCode();
+					$error_occured = TRUE;
+				}
+				$event_id = $row['event_id'];
+				//remove event from db
+				mysql_query("DELETE FROM user$user_id WHERE event_id='$event_id'");
 				$numb_events++;
 			}
-
-			//remove events from db
-			mysql_query("DELETE FROM user$user_id WHERE sub_id='$sub_id'");
 		}
 
-		//remove subscription from db
-		mysql_query("DELETE FROM subscriptions WHERE sub_id='$sub_id'");
-
+		if (!$error_occured){
+			//remove subscription from db
+			mysql_query("DELETE FROM subscriptions WHERE sub_id='$sub_id'");
+		}
 
 		//AJAX response
 		$response["sub_id"] = $sub_id;

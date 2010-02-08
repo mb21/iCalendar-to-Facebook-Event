@@ -63,6 +63,7 @@
 }
 #options{
 	width: 738px;
+	min-height: 420px;
 	position:absolute;
 	z-index: 1;
 	border: solid 1px #3B5998;
@@ -74,9 +75,13 @@
 .adv_opt{
 	float: left;
 	width: 334px;
+	min-height: 84px;
 	margin: .75em 5px;
 	padding: 1em;
 	border: solid 1px #E0E0E0;
+}
+#adv_sub_name{
+	margin: .9em 0;
 }
 .adv_opt h3{
 	margin-bottom: .5em;

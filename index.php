@@ -215,10 +215,10 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 
 					<div class="adv_opt">
 						<h4>Group/Page</h4>
-						<p>If you want to create these events for a facebook group or (fan-)page, enter its ID here. <a href="<?php echo _SITE_URL?>Docs.php" target="_blank">Help</a></p>
-						<input id="adv_page" type="text" name="page_id" size="25" value="<?php if(isset($_GET['page_id'])) echo $_GET['page_id']; ?>">
+						<p>If you want to create these events for a facebook group or (fan-)page, enter its ID here. <a href="<?php echo _SITE_URL; ?>Docs.php" target="_blank">Help</a></p>
+						<input id="adv_page" type="text" name="page_id" size="25" value="<?php if(isset($_GET['fb_page_id'])) echo $_GET['fb_page_id']; ?>">
 					</div>
-
+<!--
 					<div class="adv_opt">
 						<h4>Picture</h4>
 						<p>Associate a picture with this subscription which then will be added to every event created instead of the question mark.</p>
@@ -237,9 +237,10 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 						<input type="radio" name="rsvp" value="attending" CHECKED/>You are attending your events.<br/>
 						<input type="radio" name="rsvp" value="unsure" />You are unsure.<br/>
 						<input type="radio" name="rsvp" value="declined" />You are not attending.<br/>
-						<?php if (!$facebook->api_client->users_hasAppPermission('rsvp_event')) {
-							echo '<p>If you choose something else than <i>attending</i>, you need to give the app <fb:prompt-permission perms="rsvp_event">permission to change your RSVP</fb:prompt-permission>.</p>';
-						}
+						<?php // if (!$facebook->api_client->users_hasAppPermission('rsvp_event')) {
+						//	echo '<p>If you choose something else than <i>attending</i>, you need to give the app <fb:prompt-permission perms="rsvp_event">permission to change your RSVP</fb:prompt-permission>.</p>';
+						//}
+						//
 						?>
 					</div>
 
@@ -247,7 +248,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 						<h4>Wall</h4>
 						<input type="checkbox" name="wall" />Publish events on your profile wall (or that of the page/group)<br/>
 					</div>
-
+-->
 					<div class="bottom_box">
 						<div id="adv_update">
 							<p>Do you want the new settings only to affect new events created or do you also want to update all existing events of this subscription?</p>
@@ -256,10 +257,13 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 						</div>
 
 						<div id="adv_msg_div">
-							<?php if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
-								echo '<p>If you selected a <b>picture</b> or chose <b>wall</b> you need to give the app <fb:prompt-permission perms="publish_stream">permission to publish</fb:prompt-permission>.</p>';
-							}
-							?>
+						<!--
+						<?php// if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
+							//	echo '<p>If you selected a <b>picture</b> or chose <b>wall</b> you need to give the app <fb:prompt-permission perms="publish_stream">permission to publish</fb:prompt-permission>.</p>';
+							//}
+							//
+						?>
+						-->
 						</div>
 						<input type="submit" value="OK" onClick="close_options(); return false;" />
 						<input type="submit" id="adv_cancel" value="Cancel" onClick="toggle_view('options'); return false;" />
@@ -290,7 +294,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 <!-- SUBSCRIPTIONS TABLE-->
 <div id="subscriptions">
 	<table id="subscription_table"><tbody>
-			<tr class="table_heading"><th class="name"><h3>Subscription Name</h3></th><th class="tb_category">Category</th><th class="tb_subcategory">Subcategory</th><th class="tb_group">Group</th><th class="edit"></th><th class="remove"></th></tr>
+			<tr class="table_heading"><th class="name"><h3>Subscription Name</h3></th><th class="tb_category">Category</th><th class="tb_subcategory">Subcategory</th><th class="tb_group">Group/Page</th><th class="edit"></th><th class="remove"></th></tr>
 
 
 		</tbody>

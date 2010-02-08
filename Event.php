@@ -42,8 +42,12 @@ class Event {
 		$user_id = $this->calendar->sub_data['user_id'];
 
 		//get session key
-		$query = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
-		$session_key = mysql_result($query, 0);
+		$result = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
+		if (mysql_num_rows($result) > 0)
+			$session_key = mysql_result($result, 0);
+		else {
+			throw new Exception("No session key found in database.");
+		}
 
 		$facebook->set_user($user_id, $session_key);
 
@@ -68,8 +72,12 @@ class Event {
 		$user_id = $this->calendar->sub_data['user_id'];
 
 		//get session key
-		$query = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
-		$session_key = mysql_result($query, 0);
+		$result = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
+		if (mysql_num_rows($result) > 0)
+			$session_key = mysql_result($result, 0);
+		else {
+			throw new Exception("No session key found in database.");
+		}
 
 		$facebook->set_user($user_id, $session_key);
 
@@ -96,7 +104,8 @@ class Event {
 		$event['host'] = $this->calendar->sub_data['user_id'];
 		//page_id
 		$event['page_id'] = $this->calendar->sub_data['page_id'];
-
+		if ($event['page_id'] == 0)
+			$event['page_id'] = $this->calendar->sub_data['user_id'];;
 
 		//location
 		$location = $this->vEvent->getProperty('LOCATION');
@@ -116,6 +125,9 @@ class Event {
 
 		//description
 		$description = $this->vEvent->getProperty('DESCRIPTION');
+		$weburl= $this->vEvent->getProperty('URL');
+		if ($weburl)
+			$description .= '\n'.$weburl;
 		if ($description)
 			$event['description'] = $description;
 

@@ -17,6 +17,10 @@
 */
 
 mb_internal_encoding('UTF-8');
+date_default_timezone_set('UTC');
+
+ob_start();
+
 /////////////////////////////////
 // CONFIGURATION
 /////////////////////////////////
@@ -37,35 +41,74 @@ function __autoload($class_name) {
 	require_once $class_name . '.php';
 }
 
+ini_set('max_execution_time', 800);
+ignore_user_abort(true);
+
+
 //update all
 $result = mysql_query("SELECT * FROM subscriptions") or trigger_error(mysql_error());
 
 $numb_events = 0;
 $numb_subs = 0;
+$numb_valid_file_errors = 0;
+$numb_session_key_errors = 0;
+$numb_session_key_in_db_errors = 0;
+$numb_perms_errors = 0;
 
 while($row = mysql_fetch_assoc($result)) {
+
 	$sub_data = array("sub_id" => $row['sub_id'], "url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
 	if ($sub_data['page_id'] == 0)
 		$sub_data['page_id'] = '';
 
-	echo "<br>try ".$row['url']."<br>";
-
 	try {
 		$numb_subs++;
-
 		$calendar  = new Calendar($sub_data);
 		$newevs = $calendar->update();
-
 		$numb_events = $numb_events + $newevs;
-
-		echo "<br>done";
 	}catch(Exception $e) {
 		$error = $e->getMessage().' Error code:'.$e->getCode();
 		echo $error;
 	}
+
+	$buffer = ob_get_contents();
+	ob_clean();
+
+	if (!empty($buffer)){
+		$pos = strpos($buffer, "Error when parsing file");
+		if(!($pos === FALSE))
+			$numb_valid_file_errors++;
+		$pos = strpos($buffer, "Session key invalid or no longer valid");
+		if(!($pos === FALSE))
+			$numb_session_key_errors++;
+		$pos = strpos($buffer, "No session key found in database");
+		if(!($pos === FALSE))
+			$numb_session_key_in_db_errors++;
+		$pos = strpos($buffer, "Permissions error");
+		if(!($pos === FALSE))
+			$numb_perms_errors++;
+
+		$file = "logs/sub".$row['sub_id'].".html";
+		$fh = fopen($file, 'w') or die("can't open file");
+		fwrite($fh, "<html><body><h3>Error Log for Subscription ". $row['sub_id'] .", user:".$row['user_id']." <a href='".$row['url']."'>URL</a></h3>");
+		fwrite($fh, $buffer);
+		fwrite($fh, "</body></html>");
+		fclose($fh);
+	}
 }
+ob_end_clean();
 
 echo "<br><br>".$numb_subs." subscriptions checked, ". $numb_events . " events created or updated.";
+
+$file = "logs/update_all.html";
+$fh = fopen($file, 'w') or die("can't open file");
+fwrite($fh, "<html><body><h3>Time update_all.php run last time completely: ".date('c')."</h3><ul>
+	<li>File invalid/parse error: ".$numb_valid_file_errors."</li>
+	<li>Session key invalid: ".$numb_session_key_errors."</li>
+	<li>No session key in db: ".$numb_session_key_in_db_errors."</li>
+	<li>Permissions error: ".$numb_perms_errors."</li>
+	</ul></body></html>");
+fclose($fh);
 
 mysql_close($con);
 ?>

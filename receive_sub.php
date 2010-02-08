@@ -89,7 +89,7 @@ if ($perms && isset($_POST['url'])) {
 			(
 			event_id bigint NOT NULL,
 			PRIMARY KEY(event_id),
-			UID varchar(50),
+			UID varchar(256),
 			summary varchar(300),
 			lastupdated varchar(20),
 			sub_id int(11)
@@ -100,17 +100,26 @@ if ($perms && isset($_POST['url'])) {
 		}
 
 
-		//checkout calendar
-		$numb_events = $calendar->update();
-
-		if ($numb_events == 1) {
-			$_POST['msg'] = "<div class='clean-ok'>1 Event created.</div>";
-		}
-		else {
-			$_POST['msg'] = "<div class='clean-ok'>" . $numb_events ." Events created.</div>";
-		}
+		//response
+		ob_start();
+		$_POST['msg'] = "<div class='clean-ok'>Subscription added. Events will be created slowly to not overstretch the facebook limits.</div>";
 		echo json_encode($_POST);
 
+		// get the size of the output
+		$size = ob_get_length();
+
+		// send headers to tell the browser to close the connection
+		header("Content-Length: $size");
+		header('Connection: close');
+
+		// flush all output
+		ob_end_flush();
+		ob_flush();
+		flush();
+
+
+		//checkout calendar
+		$numb_events = $calendar->update();
 	}
 	catch(Exception $e) {
 		$response['msg'] = "<div class='clean-error'>" . $e->getMessage() ."</div>";

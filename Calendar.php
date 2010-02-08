@@ -73,23 +73,7 @@ class Calendar {
 
 				if($numb_events > $config['number_of_events_threshold']) {
 					//to not overstretch the facebook limits, add the other events later..
-					//ignore_user_abort(true);
-
-					ob_start();
-					$response['msg'] = "<div class='clean-ok'>" .$numb_events. " Events processed. More will be handled in a few seconds to not stretch the facebook limits.</div>";
-					echo json_encode($response);
-
-					// get the size of the output
-					$size = ob_get_length();
-
-					// send headers to tell the browser to close the connection
-					header("Content-Length: $size");
-					header('Connection: close');
-
-					// flush all output
-					ob_end_flush();
-					ob_flush();
-					flush();
+					ignore_user_abort(true);
 
 					$numb_events = 0;
 					sleep($config['sleep_time']);
@@ -129,7 +113,8 @@ class Calendar {
 						$event_obj = new Event($event,$this);
 
 						// edit facebook event
-						$status = $event_obj->update_to_fb($event_id) or trigger_error('Could not update event ' . $event_id);
+						if (FALSE === ($status = $event_obj->update_to_fb($event_id)) )
+							   throw new Exception("Could not update event " . $event_id);
 
 						if ($status == 1) {
 							//if successfull
@@ -168,7 +153,10 @@ class Calendar {
 		$vcalendar->setConfig( "url", $this->sub_data['url'] );
 		$vcalendar->setConfig( "newlinechar", "\r\n" );
 		if ( FALSE === $vcalendar->parse()) {
-			throw new Exception("Error when parsing file. Is this really a <a href='http://severinghaus.org/projects/icv/' target='_blank'>valid</a> iCalendar file?");
+			$vcalendar->setConfig( "newlinechar", "\n" );
+			if ( FALSE === $vcalendar->parse()) {
+				throw new Exception("Error when parsing file. Is this really a <a href='http://severinghaus.org/projects/icv/' target='_blank'>valid</a> iCalendar file?");
+			}
 		}
 		$this->iCalendar = $vcalendar;
 	}
