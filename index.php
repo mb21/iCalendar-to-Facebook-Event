@@ -40,14 +40,14 @@ function __autoload($class_name) {
 }
 
 // EXTERNAL FILES
-echo '<head><link type="text/css" rel="stylesheet" href="'._HOST_URL.'styles.css"><script src="'._HOST_URL.'scripts.js"></script></head>';
+//echo '<head><link type="text/css" rel="stylesheet" href="'._HOST_URL.'styles.css"><script src="'._HOST_URL.'scripts.js"></script></head>';
 
 //for testing the following code circumvents facebook's cache
-//echo "<head><style>";
-//echo htmlentities(file_get_contents('styles.css', true));
-//echo '</style><script type="text/javascript">';
-//include 'scripts.js.php';
-//echo "</script></head>";
+echo "<head><style>";
+echo htmlentities(file_get_contents('styles.css', true));
+echo '</style><script type="text/javascript">';
+include 'scripts.js.php';
+echo "</script></head>";
 
 
 //whether offline_access and create_event permissions are set
@@ -284,7 +284,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 			echo '<fb:error><fb:message>For this app to be able to create events, you need to give it permission to do so. Please resubmit the form.</fb:message></fb:error>';
 		}
 		else {
-			echo '<fb:success><fb:message>Permissions are now set correctly. Please review the form and resubmit it.</fb:message></fb:success> ';
+			echo '<fb:success><fb:message>Facebook permissions are now set correctly. Please review the form and resubmit it.</fb:message></fb:success> ';
 		}
 	}
 	?>
@@ -323,4 +323,6 @@ if (mysql_num_rows($result) > 0) {
 	//-->
 </script>
 
+<p>If something is not working as expected, you might want to check your <a href="<?php echo _SITE_URL;?>display_error_log.php">error log</a>.</p>
+<br/>
 <?php mysql_close($con); ?>

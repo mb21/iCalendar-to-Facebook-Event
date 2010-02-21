@@ -164,6 +164,9 @@
 .name{
 	width: 390px;
 }
+.name_error{
+	width: 150px;
+}
 .tb_category{
 	width: 75px;
 }
@@ -181,4 +184,7 @@
 }
 .unsubscribe{
 	width: 50px;
+}
+.error_logged{
+	width: 400px;
 }

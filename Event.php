@@ -127,9 +127,11 @@ class Event {
 		$description = $this->vEvent->getProperty('DESCRIPTION');
 		$weburl= $this->vEvent->getProperty('URL');
 		if ($weburl)
-			$description .= '\n'.$weburl;
-		if ($description)
+			$description .= '<br/>'.$weburl;
+		if ($description){
+			$description = str_replace("\\n", "\r\n", $description, $count);
 			$event['description'] = $description;
+		}
 
 		//start_time
 		$event["start_time"] = $this->to_facebook_time("DTSTART");

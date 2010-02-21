@@ -39,6 +39,7 @@ ini_set('max_execution_time', 800);
 ignore_user_abort(true);
 
 $error_occured = FALSE;
+$error = '';
 
 if (isset($_POST['unsub_sub_id'])) {
 	$only_unsub = ($_POST['unsub_mode'] == 'only_unsub');
@@ -57,6 +58,7 @@ if (isset($_POST['unsub_sub_id'])) {
 			$result = mysql_query("select event_id from user$user_id where sub_id='$sub_id'") or trigger_error(mysql_error());
 			$numb_events = 0;
 			while($row = mysql_fetch_array($result)) {
+				$event_id = $row['event_id'];
 				//try to not over-do facebook...
 				if($numb_events >= $config['number_of_events_threshold']) {
 					ob_start();
@@ -81,20 +83,44 @@ if (isset($_POST['unsub_sub_id'])) {
 					sleep($config['sleep_time']);
 				}
 				try{
-					$facebook->api_client->events_cancel($row['event_id']);
+					if (! ($status = $facebook->api_client->events_cancel($row['event_id'])) )
+						throw new Exception("");
+					
+					//remove event from db
+					mysql_query("DELETE FROM user$user_id WHERE event_id='$event_id'");
 				}
 				catch (Exception $e){
-					// log error: $e->getMessage().' Error code:'.$e->getCode();
-					$error_occured = TRUE;
+
+					//could not cancel event, see whether it still exists
+					try{
+						$event = $facebook->api_client->events_get(null, $event_id);
+
+						if ($event == FALSE){
+							//event doesn't exist on fb, delete it in db
+							mysql_query("DELETE FROM user$user_id WHERE event_id='$event_id'");
+						}
+						else{
+							$error_occured = TRUE;
+							$error .= "<br>". $e->getMessage() . "Could not cancel event <a href='http://www.facebook.com/event.php?eid=".$event_id."' target='_blank'>".$event_id."</a>";
+						}
+					}
+					catch(Exception $e){
+						$error_occured = TRUE;
+						$error .= "<br>". $e->getMessage() . "Could not check whether event <a href='http://www.facebook.com/event.php?eid=".$event_id."' target='_blank'>".$event_id." still exists on facebook.</a>";
+					}
+
+					
 				}
-				$event_id = $row['event_id'];
-				//remove event from db
-				mysql_query("DELETE FROM user$user_id WHERE event_id='$event_id'");
 				$numb_events++;
 			}
 		}
 
-		if (!$error_occured){
+		if ($error_occured){
+			//log error
+			$error = mysql_real_escape_string(date('c')." ".$error);
+			mysql_query("UPDATE subscriptions SET error_log='$error' WHERE sub_id='$sub_id'");
+		}
+		else{
 			//remove subscription from db
 			mysql_query("DELETE FROM subscriptions WHERE sub_id='$sub_id'");
 		}
@@ -118,4 +144,5 @@ if (isset($_POST['unsub_sub_id'])) {
 }
 
 
+mysql_close($con);
 ?>

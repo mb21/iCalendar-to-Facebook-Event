@@ -80,6 +80,7 @@ if ($perms && isset($_POST['url'])) {
 		$query = mysql_query("select max(sub_id) from subscriptions");
 		$calendar->sub_data['sub_id'] = mysql_result($query, 0);
 		$_POST['sub_id'] = $calendar->sub_data['sub_id'];
+		$sub_id = $calendar->sub_data['sub_id'];
 
 		//check whether user is already in db
 		$urls = mysql_query("show tables like 'user$user_id'") or trigger_error(mysql_error());
@@ -119,7 +120,17 @@ if ($perms && isset($_POST['url'])) {
 
 
 		//checkout calendar
+		ob_start();
+		
 		$numb_events = $calendar->update();
+
+		$buffer = ob_get_contents();
+		ob_clean();
+
+		if (!empty($buffer)){
+			$buffer = mysql_real_escape_string(date('c')." ".$buffer);
+			mysql_query("UPDATE subscriptions SET error_log='$buffer' WHERE sub_id='$sub_id'");
+		}
 	}
 	catch(Exception $e) {
 		$response['msg'] = "<div class='clean-error'>" . $e->getMessage() ."</div>";

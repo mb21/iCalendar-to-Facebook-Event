@@ -56,7 +56,7 @@ $numb_session_key_in_db_errors = 0;
 $numb_perms_errors = 0;
 
 while($row = mysql_fetch_assoc($result)) {
-
+	$sub_id = $row['sub_id'];
 	$sub_data = array("sub_id" => $row['sub_id'], "url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
 	if ($sub_data['page_id'] == 0)
 		$sub_data['page_id'] = '';
@@ -88,19 +88,15 @@ while($row = mysql_fetch_assoc($result)) {
 		if(!($pos === FALSE))
 			$numb_perms_errors++;
 
-		$file = "logs/sub".$row['sub_id'].".html";
-		$fh = fopen($file, 'w') or die("can't open file");
-		fwrite($fh, "<html><body><h3>Error Log for Subscription ". $row['sub_id'] .", user:".$row['user_id']." <a href='".$row['url']."'>URL</a></h3>");
-		fwrite($fh, $buffer);
-		fwrite($fh, "</body></html>");
-		fclose($fh);
+		$buffer = mysql_real_escape_string(date('c')." ".$buffer);
+		mysql_query("UPDATE subscriptions SET error_log='$buffer' WHERE sub_id='$sub_id'");
 	}
 }
 ob_end_clean();
 
 echo "<br><br>".$numb_subs." subscriptions checked, ". $numb_events . " events created or updated.";
 
-$file = "logs/update_all.html";
+$file = "log.html";
 $fh = fopen($file, 'w') or die("can't open file");
 fwrite($fh, "<html><body><h3>Time update_all.php run last time completely: ".date('c')."</h3><ul>
 	<li>File invalid/parse error: ".$numb_valid_file_errors."</li>
