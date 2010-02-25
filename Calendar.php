@@ -66,9 +66,12 @@ class Calendar {
 			if ($lm) {
 				$lastupdated = $event->_date2timestamp($lm);
 			}
+			else{
+				$lastupdated = NULL;
+			}
 
 			$sql_error = FALSE;
-			$result = mysql_query("select * from user$user_id where sub_id ='$sub_id' and UID = '$UID'") or $sql_error = TRUE;
+			$result = mysql_query("select * from user$user_id where sub_id ='$sub_id' and binary UID = '$UID'") or $sql_error = TRUE;
 			if ($result && mysql_num_rows($result) === 0 && !$sql_error && !$force) {
 				//event doesn't exist yet, add it
 
@@ -102,7 +105,7 @@ class Calendar {
 					}
 				}
 			}
-			elseif($result) {
+			elseif($result && !$sql_error) {
 				//event already exists on fb or update is being forced
 				$data = mysql_fetch_array($result);
 

@@ -52,7 +52,7 @@ class Event {
 		$facebook->set_user($user_id, $session_key);
 
 		//post array to facebook
-		$event_id=$facebook->api_client->events_create(json_encode($this->fbEvent));
+		$event_id = $facebook->api_client->events_create(json_encode($this->fbEvent));
 
 		return $event_id;
 	}
@@ -105,7 +105,7 @@ class Event {
 		//page_id
 		$event['page_id'] = $this->calendar->sub_data['page_id'];
 		if ($event['page_id'] == 0)
-			$event['page_id'] = $this->calendar->sub_data['user_id'];;
+			$event['page_id'] = '';
 
 		//location
 		$location = $this->vEvent->getProperty('LOCATION');
@@ -127,7 +127,7 @@ class Event {
 		$description = $this->vEvent->getProperty('DESCRIPTION');
 		$weburl= $this->vEvent->getProperty('URL');
 		if ($weburl)
-			$description .= '<br/>'.$weburl;
+			$description .= '\r\n\r\n'.$weburl;
 		if ($description){
 			$description = str_replace("\\n", "\r\n", $description, $count);
 			$event['description'] = $description;

@@ -58,8 +58,6 @@ $numb_perms_errors = 0;
 while($row = mysql_fetch_assoc($result)) {
 	$sub_id = $row['sub_id'];
 	$sub_data = array("sub_id" => $row['sub_id'], "url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
-	if ($sub_data['page_id'] == 0)
-		$sub_data['page_id'] = '';
 
 	try {
 		$numb_subs++;

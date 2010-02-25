@@ -88,7 +88,7 @@ if ($perms && isset($_POST['url'])) {
 			//create new user-table
 			$sql = 'CREATE TABLE user'. $user_id .'
 			(
-			event_id bigint NOT NULL,
+			event_id bigint UNSIGNED NOT NULL,
 			PRIMARY KEY(event_id),
 			UID varchar(256),
 			summary varchar(300),
