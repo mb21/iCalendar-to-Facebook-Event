@@ -22,6 +22,7 @@ class Calendar {
 	///////////////////////////////
 
 	public $calendar_timezone;
+	public $newline_char;
 	public $sub_data;
 	// of form: $sub_data = array("sub_id" => $sub_id, "url" => $url, "user_id" => $user_id, "category" => $_GET['category'], "subcategory" => $_GET['subcategory'], "page_id" => $_GET['page_id']);
 
@@ -62,6 +63,7 @@ class Calendar {
 		$numb_events = 0;
 		while( $event = $this->iCalendar->getComponent( 'vevent' )) {
 			$UID = $event->getProperty('UID');
+			$UID = trim($UID);
 			$lm = $event->getProperty('LAST-MODIFIED');
 			if ($lm) {
 				$lastupdated = $event->_date2timestamp($lm);
@@ -72,9 +74,9 @@ class Calendar {
 
 			$sql_error = FALSE;
 			$result = mysql_query("select * from user$user_id where sub_id ='$sub_id' and binary UID = '$UID'") or $sql_error = TRUE;
-			if ($result && mysql_num_rows($result) === 0 && !$sql_error && !$force) {
+			if ($result && !($data = mysql_fetch_array($result)) && !$sql_error && !$force) {
 				//event doesn't exist yet, add it
-
+				
 				if($numb_events > $config['number_of_events_threshold']) {
 					//to not overstretch the facebook limits, add the other events later..
 					ignore_user_abort(true);
@@ -107,7 +109,6 @@ class Calendar {
 			}
 			elseif($result && !$sql_error) {
 				//event already exists on fb or update is being forced
-				$data = mysql_fetch_array($result);
 
 				if (isset($lastupdated) || $force) {
 					if ( ($lastupdated > $data['lastupdated']) || $force ) {
@@ -158,6 +159,7 @@ class Calendar {
 		$vcalendar->setConfig( "newlinechar", "\r\n" );
 		if ( FALSE === $vcalendar->parse()) {
 			$vcalendar->setConfig( "newlinechar", "\n" );
+			$this->newline_char = "n";
 			if ( FALSE === $vcalendar->parse()) {
 				throw new Exception("Error when parsing file. Is this really a <a href='http://severinghaus.org/projects/icv/' target='_blank'>valid</a> iCalendar file?");
 			}

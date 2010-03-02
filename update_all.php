@@ -44,6 +44,8 @@ function __autoload($class_name) {
 ini_set('max_execution_time', 800);
 ignore_user_abort(true);
 
+$execution_time = time();
+
 
 //update all
 $result = mysql_query("SELECT * FROM subscriptions") or trigger_error(mysql_error());
@@ -92,16 +94,37 @@ while($row = mysql_fetch_assoc($result)) {
 }
 ob_end_clean();
 
-echo "<br><br>".$numb_subs." subscriptions checked, ". $numb_events . " events created or updated.";
+$s = time() - $execution_time;
+
+$d = intval($s/86400);
+$s -= $d*86400;
+
+$h = intval($s/3600);
+$s -= $h*3600;
+
+$m = intval($s/60);
+$s -= $m*60;
+
+$str = "";
+if ($d) $str .= $d . 'd ';
+if ($h) $str .= $h . 'h ';
+if ($m) $str .= $m . 'm ';
+if ($s) $str .= $s . 's';
+
+$execution_time = $str;
 
 $file = "log.html";
 $fh = fopen($file, 'w') or die("can't open file");
-fwrite($fh, "<html><body><h3>Time update_all.php run last time completely: ".date('c')."</h3><ul>
-	<li>File invalid/parse error: ".$numb_valid_file_errors."</li>
-	<li>Session key invalid: ".$numb_session_key_errors."</li>
-	<li>No session key in db: ".$numb_session_key_in_db_errors."</li>
-	<li>Permissions error: ".$numb_perms_errors."</li>
-	</ul></body></html>");
+fwrite($fh, "<html><body><h3>Time update_all.php run last time completely: ".date('c')."</h3>
+	<p>".$numb_subs." subscriptions checked, ". $numb_events . " events created or updated.</p>
+	<ul>
+		<li>File invalid/parse error: ".$numb_valid_file_errors."</li>
+		<li>Session key invalid: ".$numb_session_key_errors."</li>
+		<li>No session key in db: ".$numb_session_key_in_db_errors."</li>
+		<li>Permissions error: ".$numb_perms_errors."</li>
+	</ul>
+	<p>Execution time: ".$execution_time."</p>
+	</body></html>");
 fclose($fh);
 
 mysql_close($con);

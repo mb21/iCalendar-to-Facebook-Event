@@ -129,7 +129,13 @@ class Event {
 		if ($weburl)
 			$description .= '\r\n\r\n'.$weburl;
 		if ($description){
-			$description = str_replace("\\n", "\r\n", $description, $count);
+			if ($this->calendar->newline_char == "n"){
+				$description = str_replace("\\n", "\r\n", $description, $count);
+				$description = str_replace("\\r", "", $description, $count);
+			}
+			else{
+				$description = str_replace("\\n", "\r\n", $description, $count);
+			}
 			$event['description'] = $description;
 		}
 
