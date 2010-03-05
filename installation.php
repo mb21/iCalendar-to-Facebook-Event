@@ -38,7 +38,7 @@ subcategory int,
 page_id bigint,
 user_id bigint,
 error_log varchar(900),
-picture_path varchar(60),
+picture boolean,
 privacy char(6),
 rsvp char(9),
 wall boolean

@@ -25,7 +25,7 @@ mysql_query("SET CHARACTER SET 'utf8';", $con);
 mysql_select_db($database_name,$con);
 
 function __autoload($class_name) {
-	require_once $class_name . '.php';
+	require_once 'classes/' . $class_name . '.php';
 }
 
 
@@ -121,13 +121,13 @@ if ($perms && isset($_POST['url'])) {
 
 		//checkout calendar
 		ob_start();
-		
+
 		$numb_events = $calendar->update();
 
 		$buffer = ob_get_contents();
 		ob_clean();
 
-		if (!empty($buffer)){
+		if (!empty($buffer)) {
 			$buffer = mysql_real_escape_string(date('c')." ".$buffer);
 			mysql_query("UPDATE subscriptions SET error_log='$buffer' WHERE sub_id='$sub_id'");
 		}

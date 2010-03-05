@@ -36,7 +36,7 @@ mysql_query("SET CHARACTER SET 'utf8';", $con);
 mysql_select_db($database_name,$con);
 
 function __autoload($class_name) {
-	require_once $class_name . '.php';
+	require_once 'classes/' . $class_name . '.php';
 }
 
 // EXTERNAL FILES
@@ -70,6 +70,10 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 // GUI
 /////////////////////////////////
 ?>
+<fb:user-agent includes="ie">
+	<strong>This app doesn't work in Internet Explorer 5 to 8. Please use a decent browser like <a href="http://getfirefox.com" target="_blank">Firefox</a>, <a href="http://www.apple.com/safari/" target="_blank">Safari</a> or <a href="http://www.google.com/chrome" target="_blank">Google Chrome</a>.</strong>
+</fb:user-agent>
+
 
 <fb:js-string var="cats_string.e1">
 	<option value="">Select type:</option><option value="1">Birthday Party</option><option value="2">Cocktail Party</option><option value="3">Club Party</option><option value="5">Student House Party/Halls Party</option><option value="7">Barbecue</option><option value="8">Card Night</option><option value="9">Dinner Party</option><option value="10">Holiday Party</option><option value="11">Night of Mayhem</option><option value="12">Film/TV Night</option><option value="13">Drinking Games</option><option value="14">Bar Night/Pub Crawl</option><option value="15">LAN Party</option><option value="17">Mixer</option><option value="18">Sleepover</option><option value="19">Erotic Party</option><option value="20">Benefit</option><option value="21">Farewell Party</option><option value="22">House Party</option><option value="23">Reunion</option>
@@ -258,10 +262,10 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 
 						<div id="adv_msg_div">
 						<!--
-						<?php// if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
-							//	echo '<p>If you selected a <b>picture</b> or chose <b>wall</b> you need to give the app <fb:prompt-permission perms="publish_stream">permission to publish</fb:prompt-permission>.</p>';
-							//}
-							//
+						<?php if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
+								echo '<p>If you selected a <b>picture</b> or chose <b>wall</b> you need to give the app <fb:prompt-permission perms="publish_stream">permission to publish</fb:prompt-permission>.</p>';
+							}
+
 						?>
 						-->
 						</div>

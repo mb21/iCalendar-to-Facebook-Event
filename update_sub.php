@@ -19,7 +19,7 @@ mysql_query("SET CHARACTER SET 'utf8';", $con);
 mysql_select_db($database_name,$con);
 
 function __autoload($class_name) {
-	require_once $class_name . '.php';
+	require_once 'classes/' . $class_name . '.php';
 }
 
 
