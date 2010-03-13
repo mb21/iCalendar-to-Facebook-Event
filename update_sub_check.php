@@ -28,15 +28,22 @@ require_once 'facebook/facebook.php';
 $facebook = new Facebook($appapikey, $appsecret);
 $user_id = $facebook->require_login();
 
-$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream');
-$rsvp_perm = $facebook->api_client->users_hasAppPermission('rsvp_event');
-
-$require_pubish = ( isset($_POST['wall']) || ($_POST['uploadedfile'] != '') );
-
-if ($_POST['rsvp'] != 'attending' && !$rsvp_perm){
-    echo "{'msg':'rsvp'}";
+if ($_POST['page_id'] > 0){
+	$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream', $_POST['page_id']);
 }
-elseif ($require_pubish && !$publish_perm) {
+else{
+	$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream');
+}
+
+
+//$rsvp_perm = $facebook->api_client->users_hasAppPermission('rsvp_event');
+
+$require_publish = isset($_POST['wall']);
+
+//if ($_POST['rsvp'] != 'attending' && !$rsvp_perm){
+//    echo "{'msg':'rsvp'}";
+//}
+if ($require_publish && !$publish_perm) {
     echo "{'msg':'publish'}";
 }
 else{

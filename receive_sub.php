@@ -1,4 +1,21 @@
 <?php
+/*
+    This file is part of iCalendar-to-Facebook-Event.
+
+    iCalendar-to-Facebook-Event is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    iCalendar-to-Facebook-Event is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with iCalendar-to-Facebook-Event.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 mb_internal_encoding('UTF-8');
 
 /////////////////////////////////
@@ -36,51 +53,16 @@ function __autoload($class_name) {
 //$_POST = array("adv_update" => "new","rsvp" => "attending","privacy" => "open","uploadedfile" => "","page_id" => "","adv_subcategory" => 29,"adv_category" => 8,"adv_sub_name" => "","sub_id" => "","subcategory" => "29","category" => "8","url" => "http://ics-to-fbevent.project21.ch/basic.ics","sub_name" => "nay");
 
 if ($perms && isset($_POST['url'])) {
-	$url = $_POST['url'];
-	$page_id = $_POST['page_id'];
 
-	//check subscription name
-	if (mb_strlen($_POST['sub_name']) == 0) {
-		echo '{ "msg":"<div class=\'clean-error\'>You need to give your subscription a name.</div>"}';
-		exit;
-	}
-	else {
-		//get rid of all ' for mysql
-		$sub_name = str_replace("'","\'", $_POST['sub_name']);
-	}
-
-	//check category
-	if ($_POST['category'] == "" || $_POST['subcategory'] == "") {
-		echo '{ "msg":"<div class=\'clean-error\'>You need to specify a category and subcategory.</div>"}';
-		exit;
-	}
-	else {
-		$category = $_POST['category'];
-		$subcategory = $_POST['subcategory'];
-	}
-
-	//put subscription specific data in $sub_data array
-	$sub_data = array("url" => $url, "user_id" => $user_id, "category" => $category, "subcategory" => $subcategory, "page_id" => $_POST['page_id']);
+	$_POST['user_id'] = $user_id;
+	$calendar  = new Calendar(NULL, $_POST);
 
 	try {
-		//check url
-		$urlregex = '/^(https?|ftp):\/\/(\S*)\Z/';
-		if (! preg_match($urlregex, $sub_data['url']) ) {
-			echo '{ "msg":"<div class=\'clean-error\'>URL doesn\'t have correct form. Please include http:// etc.</div>"}';
-			exit;
-		}
-
-		$calendar  = new Calendar($sub_data);
 		//parse throws error when file invalid
 		$calendar->ensure_parse();
-
-		//add url to db
-		mysql_query("INSERT INTO subscriptions (sub_name, user_id, url, category, subcategory, page_id) VALUES ('$sub_name', '$user_id', '$url', '$category', '$subcategory', '$page_id')") or trigger_error(mysql_error());
-		//get sub_id from db
-		$query = mysql_query("select max(sub_id) from subscriptions");
-		$calendar->sub_data['sub_id'] = mysql_result($query, 0);
-		$_POST['sub_id'] = $calendar->sub_data['sub_id'];
+		$calendar->insert_into_db();
 		$sub_id = $calendar->sub_data['sub_id'];
+		$_POST['sub_id'] = $sub_id;
 
 		//check whether user is already in db
 		$urls = mysql_query("show tables like 'user$user_id'") or trigger_error(mysql_error());
@@ -99,6 +81,7 @@ if ($perms && isset($_POST['url'])) {
 				echo "Error creating table: " . mysql_error();
 			}
 		}
+
 
 
 		//response

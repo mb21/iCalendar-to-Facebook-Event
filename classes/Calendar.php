@@ -23,27 +23,45 @@ class Calendar {
 
 	public $calendar_timezone;
 	public $newline_char;
+	public $iCalendar;	//object of class vcalendar
 	public $sub_data;
-	// of form: $sub_data = array("sub_id" => $sub_id, "url" => $url, "user_id" => $user_id, "category" => $_GET['category'], "subcategory" => $_GET['subcategory'], "page_id" => $_GET['page_id'], "picture" => FALSE);
+//$sub_data is of form:
+//		array(
+//		"url" => $url,
+//		"user_id" => $user_id,
+//		"category" => $category,
+//		"subcategory" => $subcategory,
+//		"page_id" => $_POST['page_id'],
+//		"picture" => $picture,
+//		"wall" => $wall
+//		);
 
-	public $iCalendar;
+	private $session_key;
 
 	///////////////////////////////
 	//PUBLIC METHODS
 	///////////////////////////////
 
-	function __construct($sub_data) {
+	function __construct($sub_id, $sub_data = FALSE) {
+		//the optional parameter $sub_data is an array of the form specified above
+
+		if ($sub_data === FALSE) {
+			//no sub_data supplied, fetch it from db
+			$result = mysql_query("SELECT * FROM subscriptions where sub_id='$sub_id'");
+			if (mysql_num_rows($result) == 0)
+				throw new Exception("No subscription with sub_id=".$sub_id." found.");
+			$sub_data = mysql_fetch_assoc($result);
+		}
+		else {
+			//check supplied sub_data
+			$sub_data = $this->check_sub_data($sub_data);
+		}
+
 		//strip trailing '/' from url
-		$url = $sub_data['url'];
-		if (mb_substr($url,-1,1) == '/') {
-			$sub_data['url'] = mb_substr($url,0,-1);
+		if (mb_substr($sub_data['url'],-1,1) == '/') {
+			$sub_data['url'] = mb_substr($sub_data['url'],0,-1);
 		}
 		$this->sub_data = $sub_data;
-	}
-
-	public function ensure_timezone(){
-		if(! isset($this->calendar_timezone))
-			   $this->set_timezone();
 	}
 
 	public function update($force = FALSE) {
@@ -57,9 +75,10 @@ class Calendar {
 		$url = $this->sub_data['url'];
 		$sub_id = $this->sub_data['sub_id'];
 
+		//go figure timezone of calendar
 		$this->ensure_timezone();
 
-		//loop through calendar and add all new events to db as well as create new fb-events
+		//loop through the parsed icalendar and add all new events to db as well as create new fb-events
 		$numb_events = 0;
 		while( $event = $this->iCalendar->getComponent( 'vevent' )) {
 			$UID = $event->getProperty('UID');
@@ -68,7 +87,7 @@ class Calendar {
 			if ($lm) {
 				$lastupdated = $event->_date2timestamp($lm);
 			}
-			else{
+			else {
 				$lastupdated = NULL;
 			}
 
@@ -76,7 +95,7 @@ class Calendar {
 			$result = mysql_query("select * from user$user_id where sub_id ='$sub_id' and binary UID = '$UID'") or $sql_error = TRUE;
 			if ($result && !($data = mysql_fetch_array($result)) && !$sql_error && !$force) {
 				//event doesn't exist yet, add it
-				
+
 				if($numb_events > $config['number_of_events_threshold']) {
 					//to not overstretch the facebook limits, add the other events later..
 					ignore_user_abort(true);
@@ -101,10 +120,14 @@ class Calendar {
 						//get rid of all ' for mysql
 						$summary = str_replace("'","\'", $event->getProperty('SUMMARY'));
 
+						//and save evnet to db
 						mysql_query("INSERT INTO user$user_id (event_id, UID, summary, lastupdated, sub_id) VALUES ('$event_id', '$UID', '$summary', '$lastupdated', '$sub_id')") or trigger_error(mysql_error());
 
 						$numb_events++;
 					}
+
+					if ($this->sub_data['wall'])
+						$event_obj->post_to_wall();
 				}
 			}
 			elseif($result && !$sql_error) {
@@ -119,7 +142,7 @@ class Calendar {
 
 						// edit facebook event
 						if (FALSE === ($status = $event_obj->update_to_fb($event_id)) )
-							   throw new Exception("Could not update event " . $event_id);
+							throw new Exception("Could not update event " . $event_id);
 
 						if ($status == 1) {
 							//if successfull
@@ -138,6 +161,57 @@ class Calendar {
 		return $numb_events;
 	}
 
+	public function insert_into_db() {
+		//inserts a new subscription into the db
+
+		$user_id = $this->sub_data['user_id'];
+		$sub_name = $this->sub_data['sub_name'];
+		$url = $this->sub_data['url'];
+		$category = $this->sub_data['category'];
+		$subcategory = $this->sub_data['subcategory'];
+		$page_id = $this->sub_data['page_id'];
+		$wall = $this->sub_data['wall'];
+
+		mysql_query("INSERT INTO subscriptions (sub_name, user_id, url, category, subcategory, page_id, wall) VALUES ('$sub_name', '$user_id', '$url', '$category', '$subcategory', '$page_id', '$wall')") or trigger_error(mysql_error());
+		//get sub_id from db
+		$query = mysql_query("select max(sub_id) from subscriptions");
+		$this->sub_data['sub_id'] = mysql_result($query, 0);
+	}
+
+	public function update_in_db() {
+		//updates an existing subscription in the db from this calendar object
+
+		$user_id = $this->sub_data['user_id'];
+		$sub_name = $this->sub_data['sub_name'];
+		$url = $this->sub_data['url'];
+		$category = $this->sub_data['category'];
+		$subcategory = $this->sub_data['subcategory'];
+		$page_id = $this->sub_data['page_id'];
+		$wall = $this->sub_data['wall'];
+
+		$sub_id = $this->sub_data['sub_id'];
+
+		//update db
+		mysql_query("UPDATE subscriptions SET sub_name='$sub_name', page_id='$page_id', category='$category',
+                subcategory='$subcategory', wall='$wall' WHERE sub_id='$sub_id' AND user_id='$user_id'") or trigger_error(mysql_error());
+	}
+
+	public function get_session_key() {
+		//returns the session_key of the user of this calendar
+
+		if (!isset($this->session_key)) {
+			$user_id = $this->sub_data['user_id'];
+			$result = mysql_query("SELECT session_key FROM users WHERE user_id='$user_id'") or trigger_error(mysql_error());
+			if (mysql_num_rows($result) > 0)
+				$this->session_key = mysql_result($result, 0);
+			else {
+				throw new Exception("No session key found in database.");
+			}
+		}
+
+		return $this->session_key;
+	}
+
 	public function ensure_parse() {
 		//parses the file if not already done
 		if(!isset($this->iCalendar)) {
@@ -145,19 +219,24 @@ class Calendar {
 		}
 	}
 
+	public function ensure_timezone() {
+		//figures the timezone if not already done
+		if(! isset($this->calendar_timezone))
+			$this->set_timezone();
+	}
+
 	///////////////////////////////
 	//PRIVATE METHODS
 	///////////////////////////////
 
 	private function parse() {
-		///////////////////////////////
-		// PARSES VEVENTs in ICS-file
-		///////////////////////////////
+		// parses iCalendar/ics file
 
 		$vcalendar = new vcalendar();
 		$vcalendar->setConfig( "url", $this->sub_data['url'] );
 		$vcalendar->setConfig( "newlinechar", "\r\n" );
 		if ( FALSE === $vcalendar->parse()) {
+			//try other newline character
 			$vcalendar->setConfig( "newlinechar", "\n" );
 			$this->newline_char = "n";
 			if ( FALSE === $vcalendar->parse()) {
@@ -167,7 +246,7 @@ class Calendar {
 		$this->iCalendar = $vcalendar;
 	}
 
-	private function set_timezone(){
+	private function set_timezone() {
 		//sets $this->calendar_timezone
 
 		$vtimezone = $this->iCalendar->getComponent('vtimezone');
@@ -179,6 +258,41 @@ class Calendar {
 			if ($vtimezone)
 				$this->calendar_timezone = $vtimezone[1];
 		}
+	}
+
+	private function check_sub_data($sub_data) {
+		//checks whether the $sub_data entered by the user is valid
+
+		//check subscription name
+		if (mb_strlen($sub_data['sub_name']) == 0) {
+			echo '{ "msg":"<div class=\'clean-error\'>You need to give your subscription a name.</div>"}';
+			exit;
+		}
+		else {
+			//get rid of all ' for mysql
+			$sub_data['sub_name'] = str_replace("'","\'", $sub_data['sub_name']);
+		}
+
+		//check category
+		if ($sub_data['category'] == "" || $sub_data['subcategory'] == "") {
+			echo '{ "msg":"<div class=\'clean-error\'>You need to specify a category and subcategory.</div>"}';
+			exit;
+		}
+
+		if ( isset($sub_data['wall']) )
+			$sub_data['wall'] = TRUE;
+		else
+			$sub_data['wall'] = FALSE;
+
+		//check url
+		$urlregex = '/^(https?|ftp):\/\/(\S*)\Z/';
+		if (! preg_match($urlregex, $sub_data['url']) ) {
+			echo '{ "msg":"<div class=\'clean-error\'>URL doesn\'t have correct form. Please include http:// etc.</div>"}';
+			exit;
+		}
+
+
+		return $sub_data;
 	}
 
 

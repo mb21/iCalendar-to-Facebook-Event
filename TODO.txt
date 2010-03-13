@@ -5,11 +5,5 @@
 * invite members of group/fans with Events.invite
 (http://wiki.developers.facebook.com/index.php/Communicating_with_Users_via_Email)
 
-* display error message from update_all.php somehow to user
-
-
 testing on:
-- desciption .= url \n
-- lastupdated
-- same url twice (e.g. once on page, and once as user)
 - change adv_options retroactively

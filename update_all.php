@@ -58,12 +58,9 @@ $numb_session_key_in_db_errors = 0;
 $numb_perms_errors = 0;
 
 while($row = mysql_fetch_assoc($result)) {
-	$sub_id = $row['sub_id'];
-	$sub_data = array("sub_id" => $row['sub_id'], "url" => $row['url'], "user_id" => $row['user_id'], "category" => $row['category'], "subcategory" => $row['subcategory'], "page_id" => $row['page_id']);
-
 	try {
 		$numb_subs++;
-		$calendar  = new Calendar($sub_data);
+		$calendar  = new Calendar(NULL, $row);
 		$newevs = $calendar->update();
 		$numb_events = $numb_events + $newevs;
 	}catch(Exception $e) {
@@ -89,6 +86,7 @@ while($row = mysql_fetch_assoc($result)) {
 			$numb_perms_errors++;
 
 		$buffer = mysql_real_escape_string(date('c')." ".$buffer);
+		$sub_id = $row['sub_id'];
 		mysql_query("UPDATE subscriptions SET error_log='$buffer' WHERE sub_id='$sub_id'");
 	}
 }

@@ -104,15 +104,18 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 			var text = "<h3>Options for the new subscription</h3>";
 			which_options_open = -1;
 
+			document.getElementById("adv_page").setStyle('display','block');
 			document.getElementById("adv_subname").setStyle('display','none');
 			document.getElementById("adv_cats").setStyle('display','none');
 			document.getElementById("adv_cancel").setStyle('display','none');
 			document.getElementById("adv_update").setStyle('display','none');
+			document.getElementById("wall").setValue('off');
 		}
 		else{
 			var text = "<h3>Options for <i>"+json_sub.sub_name+"</i></h3>";
 			which_options_open = json_sub.sub_id;
 
+			document.getElementById("adv_page").setStyle('display','none');
 			document.getElementById("adv_sub_id").setValue(json_sub.sub_id);
 			document.getElementById("adv_sub_name").setValue(json_sub.sub_name);
 			if(json_sub.page){
@@ -121,25 +124,31 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 			document.getElementById("adv_category_select").setValue(json_sub.category);
 			category_change('adv_');
 			document.getElementById("adv_subcategory_select").setValue(json_sub.subcategory);
+			if (json_sub.wall == "0")
+				var wall = false;
+			else
+				var wall = true;
+			document.getElementById("wall").setChecked(wall);
+			
 		}
 		document.getElementById("option_title").setInnerXHTML(text);
-		toggle_view("options", "40em");
+		toggle_view("options", "30em");
 	}
 
 	function close_options(){
 		//check permissions
-//		var div_id = document.getElementById('adv_msg_div');
-//		var form = document.getElementById('sub_form');
-//		div_id.setInnerXHTML('<img src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..."/>');
-//
-//		var ajax = new Ajax();
-//		ajax.responseType = Ajax.JSON;
-//		ajax.requireLogin = true;
-//		ajax.onerror = function() {
-//			div_id.setInnerXHTML('<div class="clean-error">No response from server. Please try again.</div>');
-//		}
-//		ajax.ondone = function(data) {
-//			if (data.msg == "success"){
+		var div_id = document.getElementById('adv_msg_div');
+		var form = document.getElementById('sub_form');
+		div_id.setInnerXHTML('<img src="<?php echo _HOST_URL; ?>loader.gif" alt="Loading..."/>');
+
+		var ajax = new Ajax();
+		ajax.responseType = Ajax.JSON;
+		ajax.requireLogin = true;
+		ajax.onerror = function() {
+			div_id.setInnerXHTML('<div class="clean-error">No response from server. Please try again.</div>');
+		}
+		ajax.ondone = function(data) {
+			if (data.msg == "success"){
 				if (which_options_open > 0){
 					//send update to server
 					do_submit('sub_form', '<?php echo _HOST_URL . 'update_sub.php'; ?>','messages');
@@ -151,19 +160,19 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 					document.getElementById("adv_update").setStyle('display','block');
 					document.getElementById("messages").setInnerXHTML("<span></span>");
 				}
-//				div_id.setInnerXHTML("<span></span>");
+				div_id.setInnerXHTML("<span></span>");
 				which_options_open = 0;
 				toggle_view("options");
-//			}
-//			else{
-//				if (data.msg == "publish")
-//					div_id.setInnerFBML(perms_publish);
-//				else if(data.msg == "rsvp")
-//					div_id.setInnerFBML(perms_rsvp);
-//			}
-//		}
-//		var formdata = form.serialize();
-//		ajax.post('<?php echo _HOST_URL . 'update_sub_check.php'; ?>', formdata);
+			}
+			else{
+				if (data.msg == "publish")
+					div_id.setInnerFBML(perms_publish);
+				else if(data.msg == "rsvp")
+					div_id.setInnerFBML(perms_rsvp);
+			}
+		}
+		var formdata = form.serialize();
+		ajax.post('<?php echo _HOST_URL . 'update_sub_check.php'; ?>', formdata);
 	}
 
 	function show_unsubscribe(sub_id, sub_name){

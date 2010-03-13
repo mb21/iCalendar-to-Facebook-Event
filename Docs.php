@@ -24,6 +24,7 @@
 <ul>
 <li>Don't add a calendar with lots of event, remove it again, add it again etc. Facebook imposes certain <a href="http://www.facebook.com/help/?page=421" target="_blank">limits</a> and they don't like adding/removing lots of event too fast.</li>
 <li>If you change events in the ical file the facebook events will get updated but not the other way around.</li>
+<li>When editing a subscription, and you selected <i>Wall</i>, even if you choose <i>Update also existing events</i> there will be no wall posts created for old events.</li>
 <li>Internet Explorer might have some problems with this app. Get a decent browser like <a href="http://www.getfirefox.com">Firefox</a>.</li>
 </ul>
 
@@ -35,9 +36,7 @@
 <ul class="list">
 <li>support recurring events in ics files</li>
 <li>associate a picture with a subscription which then will be added to every event created</li>
-<li>add URL from ical file</li>
 <li>your default RSVP: not attending</li>
-<li>publish to wall</li>
 <li>invite members of group/fans</li>
 </ul>
 

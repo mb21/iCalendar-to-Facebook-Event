@@ -56,6 +56,7 @@ $perms = $facebook->api_client->users_hasAppPermission('offline_access') && $fac
 //store session_key in db
 if (isset($_POST["fb_sig_session_key"]) && $perms) {
 	$session_key = $_POST["fb_sig_session_key"];
+
 	$user_key = mysql_query("select session_key from users where user_id ='$user_id'") or trigger_error(mysql_error());
 	if (mysql_num_rows($user_key) == 0) {
 		mysql_query("INSERT INTO users (user_id, session_key) VALUES ('$user_id', '$session_key')") or trigger_error(mysql_error());
@@ -104,7 +105,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 	<p>You need to give this app <fb:prompt-permission perms="rsvp_event">permission to change your RSVP</fb:prompt-permission> or change your settings.</p>
 </fb:js-string>
 <fb:js-string var="perms_publish">
-	<p>If you selected a picture or chose <i>Wall</i> you need to give this app <fb:prompt-permission perms="publish_stream">permission to publish</fb:prompt-permission>.</p>
+	<div class="clean-error">If you selected <i>Wall</i> you need to give this app <a href="#" onclick="Facebook.showPermissionDialog('publish_stream', null, true);">permission to publish</a> to your wall or the wall of your fan page if you selected one.</div>
 </fb:js-string>
 
 <!-- UNSUBSCRIBE? DIALOG-->
@@ -121,6 +122,17 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 		</form>
 	</div>
 </div>
+
+
+
+<!--
+<div class="adv_opt">
+	<h4>Picture</h4>
+	<p>Associate a picture with this subscription which then will be added to every event created instead of the question mark.</p>
+	<fb:iframe src="<?php echo _HOST_URL; ?>picture_upload_iframe.php" scrolling="no" frameborder="0" height="300px"/>
+</div>
+-->
+
 
 <div>
 	<!-- URL-SUBMIT FORM -->
@@ -217,58 +229,60 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 
 					</div>
 
-					<div class="adv_opt">
+					<div class="adv_opt" id="adv_page">
 						<h4>Group/Page</h4>
 						<p>If you want to create these events for a facebook group or (fan-)page, enter its ID here. <a href="<?php echo _SITE_URL; ?>Docs.php" target="_blank">Help</a></p>
 						<input id="adv_page" type="text" name="page_id" size="25" value="<?php if(isset($_GET['fb_page_id'])) echo $_GET['fb_page_id']; ?>">
 					</div>
-<!--
+
+
+
+					<!--
 					<div class="adv_opt">
 						<h4>Picture</h4>
-						<p>Associate a picture with this subscription which then will be added to every event created instead of the question mark.</p>
-						<input type="file" name="picture" size="25" name="uploadedfile" />
+											<p>Associate a picture with this subscription which then will be added to every event created instead of the question mark.</p>
+											<input type="file" name="picture" size="25" name="uploadedfile" />
 					</div>
 
 					<div class="adv_opt">
 						<h4>Privacy</h4>
-						<input type="radio" name="privacy" value="open" CHECKED/>OPEN, events are open and visible to everyone.<br/>
-						<input type="radio" name="privacy" value="closed" />CLOSED, events are visible to everyone but require an invitation.<br/>
-						<input type="radio" name="privacy" value="secret" />SECRET, events are invisible to those who have not been invited.<br/>
+											<input type="radio" name="privacy" value="open" CHECKED/>OPEN, events are open and visible to everyone.<br/>
+											<input type="radio" name="privacy" value="closed" />CLOSED, events are visible to everyone but require an invitation.<br/>
+											<input type="radio" name="privacy" value="secret" />SECRET, events are invisible to those who have not been invited.<br/>
 					</div>
 
 					<div class="adv_opt">
 						<h4>RSVP</h4>
-						<input type="radio" name="rsvp" value="attending" CHECKED/>You are attending your events.<br/>
-						<input type="radio" name="rsvp" value="unsure" />You are unsure.<br/>
-						<input type="radio" name="rsvp" value="declined" />You are not attending.<br/>
-						<?php // if (!$facebook->api_client->users_hasAppPermission('rsvp_event')) {
-						//	echo '<p>If you choose something else than <i>attending</i>, you need to give the app <fb:prompt-permission perms="rsvp_event">permission to change your RSVP</fb:prompt-permission>.</p>';
-						//}
-						//
-						?>
+											<input type="radio" name="rsvp" value="attending" CHECKED/>You are attending your events.<br/>
+											<input type="radio" name="rsvp" value="unsure" />You are unsure.<br/>
+											<input type="radio" name="rsvp" value="declined" />You are not attending.<br/>
+					<?php // if (!$facebook->api_client->users_hasAppPermission('rsvp_event')) {
+					//	echo '<p>If you choose something else than <i>attending</i>, you need to give the app <fb:prompt-permission perms="rsvp_event">permission to change your RSVP</fb:prompt-permission>.</p>';
+					//}
+					//
+					?>
 					</div>
-
+					-->
 					<div class="adv_opt">
 						<h4>Wall</h4>
-						<input type="checkbox" name="wall" />Publish events on your profile wall (or that of the page/group)<br/>
+						<input type="checkbox" name="wall" id="wall"/>Publish events on your profile wall (or that of the page/group).<br/>
 					</div>
--->
+
 					<div class="bottom_box">
 						<div id="adv_update">
 							<p>Do you want the new settings only to affect new events created or do you also want to update all existing events of this subscription?</p>
 							<input type="radio" name="adv_update" value="new" CHECKED />Affect only new events.
-							<input type="radio" name="adv_update" value="update" />Update all.
+							<input type="radio" name="adv_update" value="update" />Update also existing events.
 						</div>
 
-						<div id="adv_msg_div">
-						<!--
-						<?php if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
-								echo '<p>If you selected a <b>picture</b> or chose <b>wall</b> you need to give the app <fb:prompt-permission perms="publish_stream">permission to publish</fb:prompt-permission>.</p>';
+						<div id="adv_msg_div">	
+							<?php if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
+								echo 'If you selected <b>Wall</b> you need to give the app <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">permission to publish</a> to your wall or the wall of your fan page if you selected one.';
 							}
 
-						?>
-						-->
+							?>
 						</div>
+						<br>
 						<input type="submit" value="OK" onClick="close_options(); return false;" />
 						<input type="submit" id="adv_cancel" value="Cancel" onClick="toggle_view('options'); return false;" />
 					</div>

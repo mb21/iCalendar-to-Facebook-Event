@@ -1,4 +1,22 @@
 <?php
+/*
+    This file is part of iCalendar-to-Facebook-Event.
+
+    iCalendar-to-Facebook-Event is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    iCalendar-to-Facebook-Event is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with iCalendar-to-Facebook-Event.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
 mb_internal_encoding('UTF-8');
 
 /////////////////////////////////
@@ -22,51 +40,31 @@ function __autoload($class_name) {
 	require_once 'classes/' . $class_name . '.php';
 }
 
-
-
-
-//$_POST = array("adv_update" => "update","rsvp" => "attending","privacy" => "open","uploadedfile" => "","page_id" => "","adv_subcategory" => 1,"adv_category" => 1,"adv_sub_name" => "","sub_id" => "","subcategory" => "29","category" => "8","url" => "http://ics-to-fbevent.project21.ch/basic.ics","sub_name" => "nay");
-//$user_id = "713344833";
-
-
-//check subscription name
-if (mb_strlen($_POST['adv_sub_name']) == 0) {
-	echo '{ "msg":"<div class=\'clean-error\'>You need to give your subscription a name.</div>"}';
-	exit;
-}
-else {
-	//get rid of all ' for mysql
-	$sub_name = str_replace("'","\'", $_POST['adv_sub_name']);
-	$_POST['sub_name'] = '';
-}
-
-//check category
-if ($_POST['category'] == "" || $_POST['subcategory'] == "") {
-	echo '{ "msg":"<div class=\'clean-error\'>You need to specify a category and subcategory.</div>"}';
-	exit;
-}
-else {
-	$category = $_POST['adv_category'];
-	$subcategory = $_POST['adv_subcategory'];
-}
 $sub_id = $_POST['sub_id'];
-$page_id = $_POST['page_id'];
+$result = mysql_query("select url, page_id from subscriptions where user_id='$user_id' and sub_id='$sub_id'");
+$row = mysql_fetch_assoc($result);
+
+$_POST['url'] = $row['url'];
+$_POST['page_id'] = $row['page_id'];
+
+$_POST['user_id'] = $user_id;
+$_POST['category'] = $_POST['adv_category'];
+$_POST['subcategory'] = $_POST['adv_subcategory'];
+$_POST['sub_name'] = $_POST['adv_sub_name'];
+
+$calendar  = new Calendar(NULL, $_POST);
 
 try {
-	//update db
-	mysql_query("UPDATE subscriptions SET sub_name='$sub_name', page_id='$page_id', category='$category',
-                subcategory='$subcategory' WHERE sub_id='$sub_id' AND user_id='$user_id'") or trigger_error(mysql_error());
+	$calendar->update_in_db();
+
 	//response
-	$_POST['msg'] = "<div class='clean-ok'>Subscription " . $sub_name . " is being updated.</div>";
+	$_POST['msg'] = "<div class='clean-ok'>Subscription " . $_POST['sub_name'] . " is being updated.</div>";
+
+	//so the GUI will know it needs to update the subscription and not create a new one
+	unset($_POST['sub_name']);
 	echo json_encode($_POST);
 
 	if ($_POST['adv_update'] == "update") {
-		//update events on fb
-		$result = mysql_query("SELECT url, page_id FROM subscriptions where sub_id='$sub_id' AND user_id='$user_id'") or trigger_error(mysql_error());
-		$row = mysql_fetch_row($result);
-
-		$sub_data = array("sub_id" => $sub_id, "url" => $row[0], "user_id" => $user_id, "category" => $category, "subcategory" => $subcategory, "page_id" => $row[1]);
-		$calendar  = new Calendar($sub_data);
 		$numb_events = $calendar->update(TRUE); //force update of calendar
 	}
 
