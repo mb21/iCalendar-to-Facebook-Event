@@ -105,7 +105,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 	<p>You need to give this app <fb:prompt-permission perms="rsvp_event">permission to change your RSVP</fb:prompt-permission> or change your settings.</p>
 </fb:js-string>
 <fb:js-string var="perms_publish">
-	<div class="clean-error">If you selected <i>Wall</i> you need to give this app <a href="#" onclick="Facebook.showPermissionDialog('publish_stream', null, true);">permission to publish</a> to your wall or the wall of your fan page if you selected one.</div>
+	<div class="clean-error">If you selected <i>Wall</i> you need to give this app <a href="#" onclick="Facebook.showPermissionDialog('publish_stream', null, true);">permission to publish</a> to your wall or the wall of your fan page if you selected one. <a href="#" onclick="Facebook.showPermissionDialog('publish_stream', null, true);">Please click here to do so.</a></div>
 </fb:js-string>
 
 <!-- UNSUBSCRIBE? DIALOG-->
@@ -232,7 +232,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 					<div class="adv_opt" id="adv_page">
 						<h4>Group/Page</h4>
 						<p>If you want to create these events for a facebook group or (fan-)page, enter its ID here. <a href="<?php echo _SITE_URL; ?>Docs.php" target="_blank">Help</a></p>
-						<input id="adv_page" type="text" name="page_id" size="25" value="<?php if(isset($_GET['fb_page_id'])) echo $_GET['fb_page_id']; ?>">
+						<input id="adv_page" type="text" name="page_id" size="25" value="<?php if(isset($_GET['fb_page_id'])) echo $_GET['fb_page_id']; elseif(isset($_GET['page_id'])) echo $_GET['page_id'];?>">
 					</div>
 
 
@@ -265,7 +265,14 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 					-->
 					<div class="adv_opt">
 						<h4>Wall</h4>
-						<input type="checkbox" name="wall" id="wall"/>Publish events on your profile wall (or that of the page/group).<br/>
+						<input type="checkbox" name="wall" id="wall"/ <?php if(isset($_GET['wall'])) echo "checked"; ?>>Publish events on your profile wall (or that of the page/group).<br/>
+						<?php if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
+								echo '<p>For this to work, you need to give the app <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">permission to publish</a> to your wall or the wall of your fan page if you selected one. <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">Please click here to do so.</a></p>';
+							}
+							else{
+								echo '<p>Do you need to <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">give permission to post to the wall of an additional page</a>?</p>';
+							}
+						?>
 					</div>
 
 					<div class="bottom_box">
@@ -274,14 +281,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 							<input type="radio" name="adv_update" value="new" CHECKED />Affect only new events.
 							<input type="radio" name="adv_update" value="update" />Update also existing events.
 						</div>
-
-						<div id="adv_msg_div">	
-							<?php if (!$facebook->api_client->users_hasAppPermission('publish_stream')) {
-								echo 'If you selected <b>Wall</b> you need to give the app <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">permission to publish</a> to your wall or the wall of your fan page if you selected one.';
-							}
-
-							?>
-						</div>
+						<div id="adv_msg_div"></div>
 						<br>
 						<input type="submit" value="OK" onClick="close_options(); return false;" />
 						<input type="submit" id="adv_cancel" value="Cancel" onClick="toggle_view('options'); return false;" />
@@ -332,6 +332,15 @@ if (mysql_num_rows($result) > 0) {
 	}
 	echo "var subscriptions = " . json_encode($arr) . ";";
 }
+
+if (isset($_GET['category'])) {
+?>
+	document.getElementById("category_select").setValue(<?php echo $_GET['category']; ?>);
+	category_change();
+	document.getElementById("subcategory_select").setValue(<?php echo $_GET['subcategory']; ?>);
+<?php
+}
+
 ?>
 
 	//draw subscription_table

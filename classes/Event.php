@@ -62,6 +62,7 @@ class Event {
 		//works only when post_to_fb has been called on the same object before (because of $this->event_id)
 
 		global $facebook;
+		global $config;
 
 		$user_id = $this->calendar->sub_data['user_id'];
 		$session_key = $this->calendar->get_session_key();
@@ -75,16 +76,28 @@ class Event {
 		//format start date/time
 		date_default_timezone_set('UTC');
 		$user_details = $facebook->api_client->users_getInfo($user_id, 'locale');
-		setlocale(LC_TIME, $user_details[0]['locale']);
+		$locale = $user_details[0]['locale'];
+		setlocale(LC_TIME, $locale);
 		$start_time = strtotime($this->start_time);
 		$start_time = strftime("%A, %d. %B %Y %R", $start_time);
 
 		$message = '';
+
+		//localization of wall texts
+		if ( isset($config['wall_text'][$locale]) )
+			$caption = "{*actor*} ".$config['wall_text'][$locale];
+		else
+			$caption = "{*actor*} ".$config['wall_text']["en_GB"];
+		if ( isset($config['text_time'][$locale]) )
+			$text_time = $config['text_time'][$locale];
+		else
+			$text_time = $config['text_time']["en_GB"];
+		
 		$attachment = array(
 			   'name' => $this->fbEvent['name'],
 			   'href' => 'http://www.facebook.com/event.php?eid=' . $this->event_id,
-			   'caption' => '{*actor*} posted this new event. Are you coming too?',
-			   'properties' => array('Time' => $start_time),
+			   'caption' => $caption,
+			   'properties' => array($text_time => utf8_encode($start_time)),
 		);
 
 		if (FALSE) {

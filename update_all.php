@@ -64,7 +64,7 @@ while($row = mysql_fetch_assoc($result)) {
 		$newevs = $calendar->update();
 		$numb_events = $numb_events + $newevs;
 	}catch(Exception $e) {
-		$error = $e->getMessage().' Error code:'.$e->getCode();
+		$error = $e->getMessage().' Error code:'.$e->getCode()." in ".$e->getFile()." Line:".$e->getLine();
 		echo $error;
 	}
 
@@ -113,7 +113,7 @@ $execution_time = $str;
 
 $file = "log.html";
 $fh = fopen($file, 'w') or die("can't open file");
-fwrite($fh, "<html><body><h3>Time update_all.php run last time completely: ".date('c')."</h3>
+fwrite($fh, "<html><body><h3>Time update_all.php run last time completely: ".date('d.m.o H:s e')."</h3>
 	<p>".$numb_subs." subscriptions checked, ". $numb_events . " events created or updated.</p>
 	<ul>
 		<li>File invalid/parse error: ".$numb_valid_file_errors."</li>

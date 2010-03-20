@@ -34,4 +34,22 @@ $config['old_event_threshold'] = "-1 month";
 
 //maximal length of event title, rest will be cropped (facebook doesn't allow more than ~70)
 $config['max_length_title'] = 70;
+
+
+// translation of wall post caption
+// http://wiki.developers.facebook.com/index.php/Facebook_Locales
+$config['wall_text'] = array(
+	"de_DE" => "hat diese neue Veranstaltung erstellt. Kommst du auch?",
+	"en_GB" => "posted this new event. Are you coming too?",
+	"en_US" => "posted this new event. Are you coming too?",
+	"en_UD" => "posted this new event. Are you coming too?"
+	);
+
+$config['text_time'] = array(
+	"de_DE" => "Zeit",
+	"en_GB" => "Time",
+	"en_US" => "Time",
+	"en_UD" => "Time"
+	);
+	
 ?>

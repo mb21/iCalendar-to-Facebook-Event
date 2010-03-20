@@ -118,9 +118,9 @@ class Calendar {
 					if ($event_id > 0) {
 						//if successful
 						//get rid of all ' for mysql
-						$summary = str_replace("'","\'", $event->getProperty('SUMMARY'));
+						$summary = mysql_real_escape_string($event->getProperty('SUMMARY'));
 
-						//and save evnet to db
+						//and save event to db
 						mysql_query("INSERT INTO user$user_id (event_id, UID, summary, lastupdated, sub_id) VALUES ('$event_id', '$UID', '$summary', '$lastupdated', '$sub_id')") or trigger_error(mysql_error());
 
 						$numb_events++;
@@ -147,7 +147,7 @@ class Calendar {
 						if ($status == 1) {
 							//if successfull
 							//get rid of all ' for mysql
-							$summary = str_replace("'","\'", $event->getProperty('SUMMARY'));
+							$summary = mysql_real_escape_string($event->getProperty('SUMMARY'));
 
 							mysql_query("UPDATE user$user_id SET summary='$summary', lastupdated='$lastupdated' WHERE event_id='$event_id'") or trigger_error(mysql_error());
 
