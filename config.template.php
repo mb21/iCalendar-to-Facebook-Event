@@ -42,14 +42,16 @@ $config['wall_text'] = array(
 	"de_DE" => "hat diese neue Veranstaltung erstellt. Kommst du auch?",
 	"en_GB" => "posted this new event. Are you coming too?",
 	"en_US" => "posted this new event. Are you coming too?",
-	"en_UD" => "posted this new event. Are you coming too?"
+	"en_UD" => "posted this new event. Are you coming too?",
+	"ca_ES" => "ha publicat aquest nou esdeveniment. Veniu?"
 	);
 
 $config['text_time'] = array(
 	"de_DE" => "Zeit",
 	"en_GB" => "Time",
 	"en_US" => "Time",
-	"en_UD" => "Time"
+	"en_UD" => "Time",
+	"ca_ES" => "Data"
 	);
 	
 ?>

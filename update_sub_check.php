@@ -28,17 +28,32 @@ require_once 'facebook/facebook.php';
 $facebook = new Facebook($appapikey, $appsecret);
 $user_id = $facebook->require_login();
 
-if ($_POST['page_id'] > 0){
-	$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream', $_POST['page_id']);
-}
-else{
-	$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream');
-}
+$require_publish = FALSE;
+if (isset($_POST['wall']) ){
+	
+	try{
+		$is_group = $facebook->api_client->groups_get(NULL, $_POST['page_id']);
+			
+		if (!$is_group){
+			//$page_id is a page_id not a group_id
 
+			$require_publish = TRUE;
+			if ($_POST['page_id'] > 0){
+				$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream', $_POST['page_id']);
+			}
+			else{
+				$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream');
+			}
+		}
+	}
+	catch (Exception $e){
+		echo "{'msg':'publish'}";
+		//echo $e->getMessage();
+		exit;
+	}
+}
 
 //$rsvp_perm = $facebook->api_client->users_hasAppPermission('rsvp_event');
-
-$require_publish = isset($_POST['wall']);
 
 //if ($_POST['rsvp'] != 'attending' && !$rsvp_perm){
 //    echo "{'msg':'rsvp'}";

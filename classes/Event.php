@@ -104,9 +104,15 @@ class Event {
 			//add picture
 			$attachment['media'] = array(array('type' => 'image', 'src' => 'http://foobar.jpg', 'href' => 'http://www.facebook.com/event.php?eid=' . $this->event_id));
 		}
-
 		$attachment = json_encode($attachment);
-		$facebook->api_client->stream_publish($message, $attachment, NULL, NULL, $page_id);
+
+		//check whether $page_id is a page-ID or a group-ID
+		$is_group = $facebook->api_client->groups_get(NULL, $page_id);
+
+		if ($is_group)
+			$facebook->api_client->stream_publish($message, $attachment, NULL, $page_id);
+		else
+			$facebook->api_client->stream_publish($message, $attachment, NULL, NULL, $page_id);
 
 	}
 

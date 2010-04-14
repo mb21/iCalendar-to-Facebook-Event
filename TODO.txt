@@ -1,9 +1,5 @@
-* associate a picture with a subscription which then will be added to every event created
+* associate a picture with a subscription which then will be added to every event created (or by ATTACH property of VEVENT)
 * support recurring events in ics files
 * Your default RSVP: not attending. with Events.rsvp (requires extended-permission rsvp_event)
-* publish to stream: $facebook->api_client->stream_publish($message, $attachment, $action_links, NULL, $page_id);
 * invite members of group/fans with Events.invite
 (http://wiki.developers.facebook.com/index.php/Communicating_with_Users_via_Email)
-
-testing on:
-- change adv_options retroactively

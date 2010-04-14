@@ -270,7 +270,7 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 								echo '<p>For this to work, you need to give the app <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">permission to publish</a> to your wall or the wall of your fan page if you selected one. <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">Please click here to do so.</a></p>';
 							}
 							else{
-								echo '<p>Do you need to <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">give permission to post to the wall of an additional page</a>?</p>';
+								echo '<p>Here is a <a href="#" onclick="Facebook.showPermissionDialog(\'publish_stream\', null, true);">list of pages</a> you haven\'t granted permission to post to yet. (If a page is not in the list or clicking on the link has no effect you have already granted that page permission.)</p>';
 							}
 						?>
 					</div>
@@ -293,6 +293,19 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 	</form>
 </div>
 
+<?php
+if (isset($_GET['category'])) {
+?>
+<script type="text/javascript">
+	document.getElementById("category_select").setValue(<?php echo $_GET['category']; ?>);
+	category_change();
+	document.getElementById("subcategory_select").setValue(<?php echo $_GET['subcategory']; ?>);
+</script>
+<?php
+}
+?>
+
+
 <!-- div to place AJAX MESSAGES in -->
 <div id="messages">
 
@@ -302,7 +315,8 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 			echo '<fb:error><fb:message>For this app to be able to create events, you need to give it permission to do so. Please resubmit the form.</fb:message></fb:error>';
 		}
 		else {
-			echo '<fb:success><fb:message>Facebook permissions are now set correctly. Please review the form and resubmit it.</fb:message></fb:success> ';
+			//echo '<fb:success><fb:message>Facebook permissions are now set correctly. Please review the form and resubmit it.</fb:message></fb:success> ';
+			echo '<script type="text/javascript">do_submit(\'sub_form\',\'' . _HOST_URL . 'receive_sub.php\', \'messages\', \'function(data) {div_id.setInnerXHTML(data.msg); if(data.sub_name)insertSub(data);}\'); return false;</script>';
 		}
 	}
 	?>
@@ -331,14 +345,6 @@ if (mysql_num_rows($result) > 0) {
 		$arr[] = $obj;
 	}
 	echo "var subscriptions = " . json_encode($arr) . ";";
-}
-
-if (isset($_GET['category'])) {
-?>
-	document.getElementById("category_select").setValue(<?php echo $_GET['category']; ?>);
-	category_change();
-	document.getElementById("subcategory_select").setValue(<?php echo $_GET['subcategory']; ?>);
-<?php
 }
 
 ?>
