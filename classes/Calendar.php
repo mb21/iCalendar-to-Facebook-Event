@@ -240,7 +240,7 @@ class Calendar {
 			$vcalendar->setConfig( "newlinechar", "\n" );
 			$this->newline_char = "n";
 			if ( FALSE === $vcalendar->parse()) {
-				throw new Exception("Error when parsing file. Is this really a <a href='http://severinghaus.org/projects/icv/' target='_blank'>valid</a> iCalendar file?");
+				throw new Exception("Error when parsing file. Is this really a <a href='http://icalvalid.cloudapp.net/' target='_blank'>valid</a> iCalendar file?");
 			}
 		}
 		$this->iCalendar = $vcalendar;

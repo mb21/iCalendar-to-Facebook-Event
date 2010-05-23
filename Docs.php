@@ -8,6 +8,8 @@
     </style>
 </head>
 
+<fb:iframe src="http://fb.adchap.com/showad.php?adchap_network=facebook&earn_id=3395&bdcolor=d8dfea&bgcolor=ffffff&textcolor=000000&titlecolor=3b5998" width="728" height="90" frameborder="0" scrolling="no"></fb:iframe>
+
 <h2>About</h2>
 <p>With this app you can subscribe to an <a href="http://en.wikipedia.org/wiki/ICalendar">iCalendar</a> file which then gets regularly checked for updates. When new events in the calendar become available, it will create a facebook event in your name.</p>
 
@@ -34,8 +36,8 @@
 <h4>Planned Features</h4>
 <p>Here is a list of planned features and options that are not yet supported:</p>
 <ul class="list">
-<li>support recurring events in ics files</li>
 <li>associate a picture with a subscription which then will be added to every event created</li>
+<li>support recurring events in ics files</li>
 <li>your default RSVP: not attending</li>
 <li>invite members of group/fans</li>
 </ul>

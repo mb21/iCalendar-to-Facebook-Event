@@ -76,7 +76,8 @@ class Event {
 		//format start date/time
 		date_default_timezone_set('UTC');
 		$user_details = $facebook->api_client->users_getInfo($user_id, 'locale');
-		$locale = $user_details[0]['locale'];
+		$user_zero = $user_details[0];
+		$locale = $user_zero['locale'];
 		setlocale(LC_TIME, $locale);
 		$start_time = strtotime($this->start_time);
 		$start_time = strftime("%A, %d. %B %Y %R", $start_time);
@@ -92,7 +93,7 @@ class Event {
 			$text_time = $config['text_time'][$locale];
 		else
 			$text_time = $config['text_time']["en_GB"];
-		
+
 		$attachment = array(
 			   'name' => $this->fbEvent['name'],
 			   'href' => 'http://www.facebook.com/event.php?eid=' . $this->event_id,
@@ -133,7 +134,15 @@ class Event {
 		$facebook->set_user($user_id, $session_key);
 
 		//post array to facebook
-		$status = $facebook->api_client->events_edit($eid, json_encode($this->fbEvent));
+		try {
+			$status = $facebook->api_client->events_edit($eid, json_encode($this->fbEvent));
+		}
+		catch(Exception $e) {
+			//To avoid error "You are no longer able to change the name of this event."
+			$event_without_name = $this->fbEvent;
+			unset($event_without_name['name']);
+			$status = $facebook->api_client->events_edit($eid, json_encode($event_without_name));
+		}
 
 		return $status;
 	}
@@ -166,19 +175,30 @@ class Event {
 			$event['location'] = $location;
 
 		//summary
-		$summary = $this->vEvent->getProperty('SUMMARY');
+		$summary_arr = $this->vEvent->getProperty('SUMMARY', FALSE , TRUE);
+		$summary = $summary_arr['value'];
 		if (!$summary)
 			$event['name'] = "unknown name";
 		else {
+			//check for Quoted-Printable encoding
+			if ($summary_arr['ENCODING'] == "QUOTED-PRINTABLE")
+				$summary = quoted_printable_decode($summary);
+
 			//facebook doesn't allow title names that are too long
 			$event['name'] = mb_substr($summary, 0, $config['max_length_title']);
 		}
 
-		//description
-		$description = $this->vEvent->getProperty('DESCRIPTION');
 		$weburl= $this->vEvent->getProperty('URL');
 
+		//description
+		$description_arr = $this->vEvent->getProperty('DESCRIPTION', FALSE, TRUE);
+		$description = $description_arr['value'];
+
 		if ($description) {
+			//check for Quoted-Printable encoding
+			if ($description_arr['ENCODING'] == "QUOTED-PRINTABLE")
+				$description = quoted_printable_decode($description);
+			
 			$description = str_replace("\\n", "\r\n", $description, $count);
 			if ($this->calendar->newline_char == "n") {
 				$description = str_replace("\\r", "", $description, $count);
@@ -217,9 +237,36 @@ class Event {
 
 		$dt = $this->vEvent->getProperty($key, FALSE, TRUE);
 		$time_arr = $dt["value"];
-		$time = $time_arr["year"] . "-" .$time_arr["month"]."-".$time_arr["day"];
-		if (isset($time_arr["hour"])) {
-			$time .= " ".$time_arr["hour"].":".$time_arr["min"].":".$time_arr["sec"];
+
+		if (!$dt && strtoupper($key) == "DTEND") {
+			//if only DURATION specified calculate DTEND
+
+			$duration_arr = $this->vEvent->getProperty('DURATION');
+			if (!$duration_arr)
+				$duration_arr['hour'] = 2;
+
+			$start_dt = $this->vEvent->getProperty('DTSTART', FALSE, TRUE);
+			$start_dt = $start_dt["value"];
+			$start_time = $this->vEvent->_date2timestamp($start_dt);
+			if (isset($duration_arr['week']))
+				$duration .= $duration_arr['week'] . "weeks ";
+			if (isset($duration_arr['day']))
+				$duration .= $duration_arr['day'] . "days ";
+			if (isset($duration_arr['hour']))
+				$duration .= $duration_arr['hour'] . "hours ";
+			if (isset($duration_arr['min']))
+				$duration .= $duration_arr['min'] . "minutes ";
+			if (isset($duration_arr['sec']))
+				$duration .= $duration_arr['sec'] . "seconds ";
+
+			$time = strtotime($duration, $start_time); //end_time = start_time + duration
+			$datetime = new DateTime("@$time");
+			$time = $datetime->format("Y-m-d H:i:s");
+		}
+		else {
+			$time = $this->vEvent->_date2timestamp($time_arr);
+			$datetime = new DateTime("@$time");
+			$time = $datetime->format("Y-m-d H:i:s");
 		}
 
 		if(!isset($dt["params"]["TZID"])) {
@@ -236,7 +283,7 @@ class Event {
 				$time = $datetime->format("Y-m-d H:i:s");
 			}
 		}
-		
+
 		//save start time for post_to_wall()
 		if ($key == "DTSTART")
 			$this->start_time = $time;
