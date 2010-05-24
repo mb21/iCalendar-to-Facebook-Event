@@ -29,24 +29,25 @@ $facebook = new Facebook($appapikey, $appsecret);
 $user_id = $facebook->require_login();
 
 $require_publish = FALSE;
-if (isset($_POST['wall']) ){
-	
-	try{
+if (isset($_POST['wall']) ) {
+
+	try {
 		$is_group = $facebook->api_client->groups_get(NULL, $_POST['page_id']);
-			
-		if (!$is_group){
+
+		if (!$is_group) {
 			//$page_id is a page_id not a group_id
 
 			$require_publish = TRUE;
-			if ($_POST['page_id'] > 0){
+			if ($_POST['page_id'] > 0) {
 				$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream', $_POST['page_id']);
 			}
-			else{
-				$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream');
-			}
+		}
+		elseif ($_POST['page_id'] == "") {
+			$require_publish = TRUE;
+			$publish_perm = $facebook->api_client->users_hasAppPermission('publish_stream');
 		}
 	}
-	catch (Exception $e){
+	catch (Exception $e) {
 		echo "{'msg':'publish'}";
 		//echo $e->getMessage();
 		exit;
@@ -59,10 +60,10 @@ if (isset($_POST['wall']) ){
 //    echo "{'msg':'rsvp'}";
 //}
 if ($require_publish && !$publish_perm) {
-    echo "{'msg':'publish'}";
+	echo "{'msg':'publish'}";
 }
-else{
-    echo "{'msg':'success'}";
+else {
+	echo "{'msg':'success'}";
 }
 
 ?>

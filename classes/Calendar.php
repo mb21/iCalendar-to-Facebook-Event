@@ -31,9 +31,10 @@ class Calendar {
 //		"user_id" => $user_id,
 //		"category" => $category,
 //		"subcategory" => $subcategory,
-//		"page_id" => $_POST['page_id'],
+//		"page_id" => $page_id,
 //		"picture" => $picture,
-//		"wall" => $wall
+//		"wall" => $wall,
+//		"image_field" => $image_field;
 //		);
 
 	private $session_key;
@@ -171,8 +172,9 @@ class Calendar {
 		$subcategory = $this->sub_data['subcategory'];
 		$page_id = $this->sub_data['page_id'];
 		$wall = $this->sub_data['wall'];
+		$image_field = $this->sub_data['image_field'];
 
-		mysql_query("INSERT INTO subscriptions (sub_name, user_id, url, category, subcategory, page_id, wall) VALUES ('$sub_name', '$user_id', '$url', '$category', '$subcategory', '$page_id', '$wall')") or trigger_error(mysql_error());
+		mysql_query("INSERT INTO subscriptions (sub_name, user_id, url, category, subcategory, page_id, wall, image_field) VALUES ('$sub_name', '$user_id', '$url', '$category', '$subcategory', '$page_id', '$wall', '$image_field')") or trigger_error(mysql_error());
 		//get sub_id from db
 		$query = mysql_query("select max(sub_id) from subscriptions");
 		$this->sub_data['sub_id'] = mysql_result($query, 0);
@@ -188,12 +190,13 @@ class Calendar {
 		$subcategory = $this->sub_data['subcategory'];
 		$page_id = $this->sub_data['page_id'];
 		$wall = $this->sub_data['wall'];
+		$image_field = $this->sub_data['image_field'];
 
 		$sub_id = $this->sub_data['sub_id'];
 
 		//update db
 		mysql_query("UPDATE subscriptions SET sub_name='$sub_name', page_id='$page_id', category='$category',
-                subcategory='$subcategory', wall='$wall' WHERE sub_id='$sub_id' AND user_id='$user_id'") or trigger_error(mysql_error());
+                subcategory='$subcategory', wall='$wall', image_field='$image_field' WHERE sub_id='$sub_id' AND user_id='$user_id'") or trigger_error(mysql_error());
 	}
 
 	public function get_session_key() {

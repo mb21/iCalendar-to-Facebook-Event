@@ -102,9 +102,9 @@ if ($perms && isset($_POST['url'])) {
 		flush();
 
 
-		//checkout calendar
 		ob_start();
 
+		//checkout calendar
 		$numb_events = $calendar->update();
 
 		$buffer = ob_get_contents();

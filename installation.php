@@ -41,7 +41,8 @@ error_log varchar(900),
 picture boolean,
 privacy char(6),
 rsvp char(9),
-wall boolean
+wall boolean,
+image_field varchar(200)
 )';
 if (!mysql_query($sql)){
 	echo "Error creating table: " . mysql_error();

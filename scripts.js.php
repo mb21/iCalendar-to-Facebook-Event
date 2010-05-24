@@ -62,7 +62,7 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 			var text = "<p>\u2013</p>";
 		}
 		else{
-			var text = '<p><a href="http://www.facebook.com/group.php?gid=' + json_sub.page_id + '">' + json_sub.page_id + '</a></p>';
+			var text = '<p><a target="_blank" href="http://www.facebook.com/group.php?gid=' + json_sub.page_id + '">' + json_sub.page_id + '</a></p>';
 		}
 		group.setInnerXHTML(text);
 

@@ -23,7 +23,7 @@ class Event {
 	private $vEvent;
 	private $event_id;
 	private $start_time; //start datetime as string in the TZ the user wants it to see (not pacific time or UTC)
-
+	private $image_file_path;
 
 	///////////////////////////////
 	//PUBLIC METHODS
@@ -32,6 +32,23 @@ class Event {
 	function __construct($event, $calendar) {
 		$this->vEvent = $event;
 		$this->calendar = $calendar;
+
+		//figure what image to use if any
+		$image_field = $this->calendar->sub_data['image_field'];
+		if (strlen($image_field) > 2) {
+			//download image file from X-property URL
+			$this->image_file_path = $this->get_image_file($image_field);
+		}
+		elseif ($this->calendar->sub_data['picture']) {
+			//use generic subscription picture
+			$this->image_file_path = "pictures/".$this->calendar->sub_data['sub_id'];
+		}
+	}
+
+	function __destruct() {
+		//delete image in pictures/tmp
+		if ($this->image_file_path && !$this->calendar->sub_data['picture'])
+			unlink($this->image_file_path);
 	}
 
 	public function post_to_fb() {
@@ -45,16 +62,44 @@ class Event {
 		$facebook->set_user($user_id, $session_key);
 
 		//post array to facebook
-		if ($this->calendar->sub_data['picture']) {
-			$file_path = "pictures/".$this->calendar->sub_data['sub_id'];
-			$event_id = $facebook->api_client->events_create(json_encode($this->fbEvent, $file_path));
-		}
-		else {
+		if ($this->image_file_path)
+			$event_id = $facebook->api_client->events_create(json_encode($this->fbEvent), $this->image_file_path);
+		else
 			$event_id = $facebook->api_client->events_create(json_encode($this->fbEvent));
-		}
 
 		$this->event_id = $event_id;
 		return $event_id;
+	}
+
+
+	public function update_to_fb($eid) {
+		//updates an existing facebook event
+
+		global $facebook;
+		$this->ensure_convert();
+
+		$user_id = $this->calendar->sub_data['user_id'];
+		$session_key = $this->calendar->get_session_key();
+		$facebook->set_user($user_id, $session_key);
+
+		//post array to facebook
+		try {
+			if ($this->image_file_path)
+				$status = $facebook->api_client->events_edit($eid, json_encode($this->fbEvent), $this->image_file_path);
+			else
+				$status = $facebook->api_client->events_edit($eid, json_encode($this->fbEvent));
+		}
+		catch(Exception $e) {
+			//To avoid error "You are no longer able to change the name of this event."
+			$event_without_name = $this->fbEvent;
+			unset($event_without_name['name']);
+			if ($this->image_file_path)
+				$status = $facebook->api_client->events_edit($eid, json_encode($event_without_name, $this->image_file_path));
+			else
+				$status = $facebook->api_client->events_edit($eid, json_encode($event_without_name));
+		}
+
+		return $status;
 	}
 
 	public function post_to_wall() {
@@ -101,9 +146,18 @@ class Event {
 			   'properties' => array($text_time => utf8_encode($start_time)),
 		);
 
-		if (FALSE) {
+		if ($this->image_file_path) {
 			//add picture
-			$attachment['media'] = array(array('type' => 'image', 'src' => 'http://foobar.jpg', 'href' => 'http://www.facebook.com/event.php?eid=' . $this->event_id));
+			if ($this->calendar->sub_data['picture']) {
+				//use general subscription picture
+				$image_url = _HOST_URL . $this->image_file_path;
+			}
+			else {
+				//use url of event-specific image
+				$xprop = $this->vEvent->getProperty($this->calendar->sub_data['image_field']);
+				$image_url = $xprop[1];
+			}
+			$attachment['media'] = array(array('type' => 'image', 'src' => $image_url, 'href' => 'http://www.facebook.com/event.php?eid=' . $this->event_id));
 		}
 		$attachment = json_encode($attachment);
 
@@ -121,30 +175,6 @@ class Event {
 		if(!isset($this->fbEvent)) {
 			$this->convert();
 		}
-	}
-
-	public function update_to_fb($eid) {
-		//updates an existing facebook event
-
-		global $facebook;
-		$this->ensure_convert();
-
-		$user_id = $this->calendar->sub_data['user_id'];
-		$session_key = $this->calendar->get_session_key();
-		$facebook->set_user($user_id, $session_key);
-
-		//post array to facebook
-		try {
-			$status = $facebook->api_client->events_edit($eid, json_encode($this->fbEvent));
-		}
-		catch(Exception $e) {
-			//To avoid error "You are no longer able to change the name of this event."
-			$event_without_name = $this->fbEvent;
-			unset($event_without_name['name']);
-			$status = $facebook->api_client->events_edit($eid, json_encode($event_without_name));
-		}
-
-		return $status;
 	}
 
 
@@ -168,7 +198,12 @@ class Event {
 			$event['page_id'] = '';
 
 		//location
-		$location = $this->vEvent->getProperty('LOCATION');
+		$location_arr = $this->vEvent->getProperty('LOCATION', FALSE, TRUE);
+		$location = $location_arr['value'];
+
+		//check for Quoted-Printable encoding
+		if ($location_arr['params']['ENCODING'] == "QUOTED-PRINTABLE")
+			$location = quoted_printable_decode($location);
 		if (!$location || $location == '')
 			$event['location'] = ' ';
 		else
@@ -181,7 +216,7 @@ class Event {
 			$event['name'] = "unknown name";
 		else {
 			//check for Quoted-Printable encoding
-			if ($summary_arr['ENCODING'] == "QUOTED-PRINTABLE")
+			if ($summary_arr['params']['ENCODING'] == "QUOTED-PRINTABLE")
 				$summary = quoted_printable_decode($summary);
 
 			//facebook doesn't allow title names that are too long
@@ -196,9 +231,9 @@ class Event {
 
 		if ($description) {
 			//check for Quoted-Printable encoding
-			if ($description_arr['ENCODING'] == "QUOTED-PRINTABLE")
+			if ($description_arr['params']['ENCODING'] == "QUOTED-PRINTABLE")
 				$description = quoted_printable_decode($description);
-			
+
 			$description = str_replace("\\n", "\r\n", $description, $count);
 			if ($this->calendar->newline_char == "n") {
 				$description = str_replace("\\r", "", $description, $count);
@@ -302,6 +337,40 @@ class Event {
 		$datetime->modify($offset." seconds");
 		// Return Unix timestamp
 		return $datetime->format("U");
+	}
+
+	private function get_image_file($image_field) {
+		//download image for specific event
+
+		$xprop = $this->vEvent->getProperty($image_field);
+		$image_url = $xprop[1];
+
+		try {
+			$newfilename = "pictures/tmp/" . rand(100000, 10000000);
+
+			$out = fopen($newfilename, 'wb');
+			if ($out == FALSE) {
+				throw new Exception("Could not open location $newfilename.");
+			}
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_FILE, $out);
+			curl_setopt($ch, CURLOPT_HEADER, 0);
+			curl_setopt($ch, CURLOPT_URL, $image_url);
+
+			curl_exec($ch);
+
+			if (curl_error($ch))
+				throw new Exception(curl_error($ch));
+
+			curl_close($ch);
+
+			return $newfilename;
+		}
+		catch (Exception $e) {
+			echo $e->getMessage();
+
+			return NULL;
+		}
 	}
 
 }
