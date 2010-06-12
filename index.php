@@ -240,8 +240,8 @@ if (isset($_POST["fb_sig_session_key"]) && $perms) {
 					
 					<div class="adv_opt">
 						<h4>Picture</h4>
-						<p>If some of the events in your iCalendar file have a special <a href="http://en.wikipedia.org/wiki/ICalendar#Calendar_extensions" target="_blank">X-field</a> that cointains an URL which points to an image file, you can enter the name of that field here. e.g. <a href="http://www.google.com/support/calendar/bin/answer.py?answer=48526" target="_blank">X-GOOGLE-CALENDAR-CONTENT-URL</a></p>
-						<input type="text" name="image_field" size="30" />
+						<p>If some of the events in your iCalendar file have a special <a href="http://en.wikipedia.org/wiki/ICalendar#Calendar_extensions" target="_blank">X-field</a> that cointains an URL which points to an image file, you can enter the name of that field here. e.g. <a href="http://www.google.com/support/calendar/bin/answer.py?answer=48526" target="_blank">X-GOOGLE-CALENDAR-CONTENT-URL</a> or ATTACH if that contains an URL.</p>
+						<input id="image_field" type="text" name="image_field" size="30" />
 
 <!--						<p>For calendars or events that don't have such a field you can upload a general picture for this subscription.</p>
 						<input type="file" name="picture" size="25" />

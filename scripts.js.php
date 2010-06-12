@@ -121,6 +121,7 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 			if(json_sub.page){
 				document.getElementById("adv_page").setValue(json_sub.page);
 			}
+			document.getElementById("image_field").setValue(json_sub.image_field);
 			document.getElementById("adv_category_select").setValue(json_sub.category);
 			category_change('adv_');
 			document.getElementById("adv_subcategory_select").setValue(json_sub.subcategory);

@@ -58,10 +58,6 @@ class Calendar {
 			$sub_data = $this->check_sub_data($sub_data);
 		}
 
-		//strip trailing '/' from url
-		if (mb_substr($sub_data['url'],-1,1) == '/') {
-			$sub_data['url'] = mb_substr($sub_data['url'],0,-1);
-		}
 		$this->sub_data = $sub_data;
 	}
 

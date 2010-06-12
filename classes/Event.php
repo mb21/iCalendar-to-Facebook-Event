@@ -24,6 +24,7 @@ class Event {
 	private $event_id;
 	private $start_time; //start datetime as string in the TZ the user wants it to see (not pacific time or UTC)
 	private $image_file_path;
+	private $image_file_url;
 
 	///////////////////////////////
 	//PUBLIC METHODS
@@ -36,12 +37,25 @@ class Event {
 		//figure what image to use if any
 		$image_field = $this->calendar->sub_data['image_field'];
 		if (strlen($image_field) > 2) {
-			//download image file from X-property URL
-			$this->image_file_path = $this->get_image_file($image_field);
+			if ($image_field == "ATTACH"){
+				//set image URL from ATTACH field
+				$this->image_file_url = $this->vEvent->getProperty('ATTACH');
+				if (substr_count($this->image_file_url, "%3A%2F%2F") > 0){
+					//decode percent-encoding
+					$this->image_file_url = rawurldecode($this->image_file_url);
+				}
+			}
+			else{
+				//set image URL from X-property
+				$xprop = $this->vEvent->getProperty($image_field);
+				$this->image_file_url = $xprop[1];
+			}
+			$this->get_image_file();
 		}
 		elseif ($this->calendar->sub_data['picture']) {
 			//use generic subscription picture
 			$this->image_file_path = "pictures/".$this->calendar->sub_data['sub_id'];
+			$this->image_file_url = _HOST_URL . $this->image_file_path;
 		}
 	}
 
@@ -129,7 +143,7 @@ class Event {
 
 		$message = '';
 
-		//localization of wall texts
+		//localization of wall texts (set language)
 		if ( isset($config['wall_text'][$locale]) )
 			$caption = "{*actor*} ".$config['wall_text'][$locale];
 		else
@@ -148,16 +162,7 @@ class Event {
 
 		if ($this->image_file_path) {
 			//add picture
-			if ($this->calendar->sub_data['picture']) {
-				//use general subscription picture
-				$image_url = _HOST_URL . $this->image_file_path;
-			}
-			else {
-				//use url of event-specific image
-				$xprop = $this->vEvent->getProperty($this->calendar->sub_data['image_field']);
-				$image_url = $xprop[1];
-			}
-			$attachment['media'] = array(array('type' => 'image', 'src' => $image_url, 'href' => 'http://www.facebook.com/event.php?eid=' . $this->event_id));
+			$attachment['media'] = array(array('type' => 'image', 'src' => $this->image_file_url, 'href' => 'http://www.facebook.com/event.php?eid=' . $this->event_id));
 		}
 		$attachment = json_encode($attachment);
 
@@ -257,21 +262,18 @@ class Event {
 	private function to_facebook_time($key) {
 		//takes an ics-key (like DTSTART or DTEND) and outputs this in the time-format facebook currently uses in Events.create
 		/*
-		from http://wiki.developers.facebook.com/index.php/Events.create:
-		The start_time and end_time are the times that were input by the event creator, converted to UTC after assuming that they were in Pacific time (Daylight Savings or Standard, depending on the date of the event), then converted into Unix epoch time. Basically this means for some reason facebook does not want to get epoch timestamps here, but rather something like epoch timestamp minus 7 or 8 hours, depeding on the date. have fun! (Note: I created a bug report http://bugs.developers.facebook.com/show_bug.cgi?id=7210 for this since it is incredibly complex to require all devs to determine PST vs. PDT. This call should accept UTC time. Please vote for that bug!)
-		
-		and hack from http://forum.developers.facebook.com/viewtopic.php?pid=129685
-		
-		because facebook is stupid we just have to enter the time the user 
-		wants displayed, pretend that it's in UTC and substract -8 or -7 hours,
-		(depending on whether its standard or daylight saving time over in sunny
-		california)
+		because facebook is stupid the time of the event displayed is the same for each user, regardless of his time zone.
+		facebook does take UTC time now though (as opposed to Pacific earlier).
+		So if you want the time 16:00 displayed you need to supply the time stamp for when it is 16:00 in UTC time
+		(which may or may not be the timezone of the place where the event actually is).
 		*/
 
-		date_default_timezone_set('UTC');
 
 		$dt = $this->vEvent->getProperty($key, FALSE, TRUE);
 		$time_arr = $dt["value"];
+
+		date_default_timezone_set('UTC');
+
 
 		if (!$dt && strtoupper($key) == "DTEND") {
 			//if only DURATION specified calculate DTEND
@@ -295,14 +297,11 @@ class Event {
 				$duration .= $duration_arr['sec'] . "seconds ";
 
 			$time = strtotime($duration, $start_time); //end_time = start_time + duration
-			$datetime = new DateTime("@$time");
-			$time = $datetime->format("Y-m-d H:i:s");
 		}
 		else {
 			$time = $this->vEvent->_date2timestamp($time_arr);
-			$datetime = new DateTime("@$time");
-			$time = $datetime->format("Y-m-d H:i:s");
 		}
+
 
 		if(!isset($dt["params"]["TZID"])) {
 			//if no timezone specified check for calendar timezone
@@ -311,39 +310,27 @@ class Event {
 			if (isset($calendar_tz) && isset($time_arr["tz"]) && $time_arr["tz"] == "Z") {
 				// if calendar timezone is set and event is in UTC we assume that the user
 				// wants his event time displayed in the calendar timezone (presumably
-				// his local timezone) and not in UTC. Thus we convert it.
+				// his local timezone) and not in UTC. Thus we calculate the offset.
 				$user_tz = new DateTimeZone($calendar_tz);
-				$datetime = new DateTime($time);
-				$datetime->setTimezone($user_tz);
-				$time = $datetime->format("Y-m-d H:i:s");
+				$datetime = new DateTime("@$time");
+				$tz_offset = timezone_offset_get($user_tz, $datetime);
+				$time += $tz_offset;
 			}
 		}
+
 
 		//save start time for post_to_wall()
 		if ($key == "DTSTART")
 			$this->start_time = $time;
 
-		// Create new date object from $time in UTC (default TZ)
-		$datetime = new DateTime($time);
-		// Create Los Angeles timezone
-		$la_time = new DateTimeZone('America/Los_Angeles');
-		// Set LA timezone to the date object
-		$datetime->setTimezone($la_time);
-		// Calculate the timezone offset (DST included during calculations)
-		$offset = $datetime->getOffset();
-		// Facebook adds its timezone offset to the received timestamp
-		// Cheat facebook by adding the offset he is going to subtract
-		$offset = $offset*(-1);
-		$datetime->modify($offset." seconds");
-		// Return Unix timestamp
-		return $datetime->format("U");
+		date_default_timezone_set('UTC');
+		return $time;
 	}
 
-	private function get_image_file($image_field) {
+	private function get_image_file() {
 		//download image for specific event
-
-		$xprop = $this->vEvent->getProperty($image_field);
-		$image_url = $xprop[1];
+		
+		$image_url = $this->image_file_url;
 
 		try {
 			$newfilename = "pictures/tmp/" . rand(100000, 10000000);
@@ -364,7 +351,7 @@ class Event {
 
 			curl_close($ch);
 
-			return $newfilename;
+			$this->image_file_path = $newfilename;
 		}
 		catch (Exception $e) {
 			echo $e->getMessage();
