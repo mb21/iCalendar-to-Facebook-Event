@@ -138,8 +138,7 @@ class Event {
 		$user_zero = $user_details[0];
 		$locale = $user_zero['locale'];
 		setlocale(LC_TIME, $locale);
-		$start_time = strtotime($this->start_time);
-		$start_time = strftime("%A, %d. %B %Y %R", $start_time);
+		$start_time = strftime("%A, %d. %B %Y %R", $this->start_time);
 
 		$message = '';
 
@@ -199,9 +198,9 @@ class Event {
 		$event['host'] = $this->calendar->sub_data['user_id'];
 		//page_id
 		$event['page_id'] = $this->calendar->sub_data['page_id'];
-		if ($event['page_id'] == 0)
-			$event['page_id'] = '';
-
+		if ($event['page_id'] == 0 || $event['page_id'] == '')
+			unset($event['page_id']);
+		
 		//location
 		$location_arr = $this->vEvent->getProperty('LOCATION', FALSE, TRUE);
 		$location = $location_arr['value'];
@@ -263,9 +262,7 @@ class Event {
 		//takes an ics-key (like DTSTART or DTEND) and outputs this in the time-format facebook currently uses in Events.create
 		/*
 		because facebook is stupid the time of the event displayed is the same for each user, regardless of his time zone.
-		facebook does take UTC time now though (as opposed to Pacific earlier).
-		So if you want the time 16:00 displayed you need to supply the time stamp for when it is 16:00 in UTC time
-		(which may or may not be the timezone of the place where the event actually is).
+		facebook does take UTC time now though (as opposed to Pacific earlier). So we have to calculate the offset...
 		*/
 
 
@@ -324,6 +321,14 @@ class Event {
 			$this->start_time = $time;
 
 		date_default_timezone_set('UTC');
+
+		//adjust for newest facebook bug.. 
+		//adds 14 or 16 hours (depending on wether its daylight saving time over in sunny California) to the timestamp
+		$user_tz = new DateTimeZone('America/Los_Angeles');
+		$datetime = new DateTime("@$time");
+		$tz_offset = timezone_offset_get($user_tz, $datetime);
+		$time -= (2 * $tz_offset);
+		
 		return $time;
 	}
 

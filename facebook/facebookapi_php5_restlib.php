@@ -285,25 +285,35 @@ function toggleDisplay(id, type) {
   /**
    * Returns the session information available after current user logs in.
    *
-   * @param string $auth_token             the token returned by
-   *                                       auth_createToken or passed back to
-   *                                       your callback_url.
-   * @param bool $generate_session_secret  whether the session returned should
-   *                                       include a session secret
+   * @param string $auth_token the token returned by auth_createToken or
+   *               passed back to your callback_url.
+   * @param bool $generate_session_secret whether the session returned should
+   *             include a session secret
+   * @param string $host_url the connect site URL for which the session is
+   *               being generated.  This parameter is optional, unless
+   *               you want Facebook to determine which of several base domains
+   *               to choose from.  If this third argument isn't provided but
+   *               there are several base domains, the first base domain is
+   *               chosen.
    *
    * @return array  An assoc array containing session_key, uid
    */
-  public function auth_getSession($auth_token, $generate_session_secret=false) {
+  public function auth_getSession($auth_token,
+                                  $generate_session_secret = false,
+                                  $host_url = null) {
     if (!$this->pending_batch()) {
-      $result = $this->call_method('facebook.auth.getSession',
-          array('auth_token' => $auth_token,
-                'generate_session_secret' => $generate_session_secret));
+      $result = $this->call_method(
+        'facebook.auth.getSession',
+        array('auth_token' => $auth_token,
+              'generate_session_secret' => $generate_session_secret,
+              'host_url' => $host_url));
       $this->session_key = $result['session_key'];
 
-    if (!empty($result['secret']) && !$generate_session_secret) {
-      // desktop apps have a special secret
-      $this->secret = $result['secret'];
-    }
+      if (!empty($result['secret']) && !$generate_session_secret) {
+        // desktop apps have a special secret
+        $this->secret = $result['secret'];
+      }
+
       return $result;
     }
   }
@@ -559,7 +569,7 @@ function toggleDisplay(id, type) {
     return $this->call_method('facebook.events.invite',
                               array('eid' => $eid,
                                     'uids' => $uids,
-                                    'personal_message', $personal_message));
+                                    'personal_message' => $personal_message));
   }
 
   /**
@@ -1340,6 +1350,7 @@ function toggleDisplay(id, type) {
     );
   }
 
+
   /**
    * Creates a note with the specified title and content.
    *
@@ -1947,7 +1958,7 @@ function toggleDisplay(id, type) {
    * @return  array  A list of strings describing any compile errors for the
    *                 submitted FBML
    */
-  function profile_setFBML($markup,
+  public function profile_setFBML($markup,
                            $uid=null,
                            $profile='',
                            $profile_action='',
@@ -2883,6 +2894,35 @@ function toggleDisplay(id, type) {
   }
 
   /**
+   * Sets href and text for a Live Stream Box xid's via link
+   *
+   * @param  string  $xid       xid of the Live Stream
+   * @param  string  $via_href  Href for the via link
+   * @param  string  $via_text  Text for the via link
+   *
+   * @return boolWhether the set was successful
+   */
+  public function admin_setLiveStreamViaLink($xid, $via_href, $via_text) {
+    return $this->call_method('facebook.admin.setLiveStreamViaLink',
+                              array('xid'      => $xid,
+                                    'via_href' => $via_href,
+                                    'via_text' => $via_text));
+  }
+
+  /**
+   * Gets href and text for a Live Stream Box xid's via link
+   *
+   * @param  string  $xid  xid of the Live Stream
+   *
+   * @return Array  Associative array with keys 'via_href' and 'via_text'
+   *                False if there was an error.
+   */
+  public function admin_getLiveStreamViaLink($xid) {
+    return $this->call_method('facebook.admin.getLiveStreamViaLink',
+                              array('xid' => $xid));
+  }
+
+  /**
    * Returns the allocation limit value for a specified integration point name
    * Integration point names are defined in lib/api/karma/constants.php in the
    * limit_map.
@@ -3180,9 +3220,8 @@ function toggleDisplay(id, type) {
     } else {
       $get['v'] = '1.0';
     }
-    if (isset($this->use_ssl_resources) &&
-        $this->use_ssl_resources) {
-      $post['return_ssl_resources'] = true;
+    if (isset($this->use_ssl_resources)) {
+      $post['return_ssl_resources'] = (bool) $this->use_ssl_resources;
     }
     return array($get, $post);
   }

@@ -42,12 +42,7 @@ echo '<head><link type="text/css" rel="stylesheet" href="'._HOST_URL.'styles.css
 <p>iCalendar to Event – <a href="<?php echo _SITE_URL;?>Docs.php">Help/Documentation</a></p>
 <br/>
 <?php
-
-$result = mysql_query("SELECT * FROM subscriptions WHERE user_id='$user_id' AND error_log IS NOT NULL");
-if (mysql_num_rows($result) == 0){
-	echo "There are no errors logged.";
-}
-else{
+$result = mysql_query("SELECT * FROM subscriptions WHERE user_id='$user_id'");
 ?>
 <table id="subscription_table">
 	<tbody>
@@ -65,10 +60,7 @@ else{
 ?>
 	</tbody>
 </table>
-<?php
-}
 
-?>
 <br/><br/>
 <p>Common errors are:</p>
 <li>
