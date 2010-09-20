@@ -32,8 +32,13 @@ $require_publish = FALSE;
 if (isset($_POST['wall']) ) {
 
 	try {
-		$is_group = $facebook->api_client->groups_get(NULL, $_POST['page_id']);
-
+		try{
+			$is_group = $facebook->api_client->groups_get(NULL, $_POST['page_id']);
+		}
+		catch (Exception $e){
+			$is_group = FALSE;
+		}
+		
 		if (!$is_group) {
 			//$page_id is a page_id not a group_id
 
@@ -49,7 +54,7 @@ if (isset($_POST['wall']) ) {
 	}
 	catch (Exception $e) {
 		echo "{'msg':'publish'}";
-		//echo $e->getMessage();
+		//echo $e->getMessage() . $e->getTraceAsString();
 		exit;
 	}
 }

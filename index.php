@@ -25,7 +25,7 @@ require_once 'config.php';
 require_once 'facebook/facebook.php';
 
 $facebook = new Facebook($appapikey, $appsecret);
-$user_id = $facebook->require_login();
+$user_id = $facebook->require_login("offline_access, create_event");
 
 //Connect to Database
 $con = mysql_connect($host,$db_user,$db_password);
