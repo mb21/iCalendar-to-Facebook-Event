@@ -108,7 +108,7 @@ class Event {
 			$event_without_name = $this->fbEvent;
 			unset($event_without_name['name']);
 			if ($this->image_file_path)
-				$status = $facebook->api_client->events_edit($eid, json_encode($event_without_name, $this->image_file_path));
+				$status = $facebook->api_client->events_edit($eid, json_encode($event_without_name), $this->image_file_path);
 			else
 				$status = $facebook->api_client->events_edit($eid, json_encode($event_without_name));
 		}
@@ -200,7 +200,7 @@ class Event {
 		$event['page_id'] = $this->calendar->sub_data['page_id'];
 		if ($event['page_id'] == 0 || $event['page_id'] == '')
 			unset($event['page_id']);
-		
+
 		//location
 		$location_arr = $this->vEvent->getProperty('LOCATION', FALSE, TRUE);
 		$location = $location_arr['value'];
@@ -242,6 +242,7 @@ class Event {
 			if ($this->calendar->newline_char == "n") {
 				$description = str_replace("\\r", "", $description, $count);
 			}
+			$description = strip_tags($description);
 		}
 		if ($weburl)
 			$description .= "\r\n\r\n".$weburl;
@@ -262,7 +263,6 @@ class Event {
 		//takes an ics-key (like DTSTART or DTEND) and outputs this in the time-format facebook currently uses in Events.create
 		/*
 		because facebook is stupid the time of the event displayed is the same for each user, regardless of his time zone.
-		facebook does take UTC time now though (as opposed to Pacific earlier). So we have to calculate the offset...
 		*/
 
 
@@ -317,19 +317,20 @@ class Event {
 
 
 		//save start time for post_to_wall()
+		//$time is timestamp in UTC now	
 		if ($key == "DTSTART")
 			$this->start_time = $time;
 
 		date_default_timezone_set('UTC');
-
+		
 		//adjust for newest facebook bug.. 
-		//adds 14 or 16 hours (depending on wether its daylight saving time over in sunny California) to the timestamp
+		//adds 7 or 8 hours (depending on whether it's daylight saving time over in sunny California) to the timestamp
 		$user_tz = new DateTimeZone('America/Los_Angeles');
 		$datetime = new DateTime("@$time");
 		$tz_offset = timezone_offset_get($user_tz, $datetime);
-		$time -= (2 * $tz_offset);
+		$time -= $tz_offset;
 		
-		return $time;
+		return date("c", $time); //output in ISO 8601, e.g. 2004-02-12T15:19:21+00:00
 	}
 
 	private function get_image_file() {

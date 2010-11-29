@@ -1,14 +1,12 @@
-<head>
+	<head>
     <style>
-        .list li{
-            padding-left: 1em;
+        .list{
+            padding-left: 1.5em;
             list-style-type: disc;
             display: list-item;
         }
     </style>
 </head>
-
-<fb:iframe src="http://fb.adchap.com/showad.php?adchap_network=facebook&earn_id=3395&bdcolor=d8dfea&bgcolor=ffffff&textcolor=000000&titlecolor=3b5998" width="728" height="90" frameborder="0" scrolling="no"></fb:iframe>
 
 <h2>About</h2>
 <p>With this app you can subscribe to an <a href="http://en.wikipedia.org/wiki/ICalendar">iCalendar</a> file which then gets regularly checked for updates. When new events in the calendar become available, it will create a facebook event in your name.</p>
@@ -22,12 +20,13 @@
 <h4>Pages</h4>
 <p>You can add this app to your facebook pages (fan-pages) to create events for them. Here is how: Go to the <a href="http://www.facebook.com/apps/application.php?v=info&id=164414672850" target="_blank">page of this app</a> and click on the left on "Add to my Page". Add it to those of your pages you want, then close the popup. Now go to your page (fanpage) and edit it. Under Applications, you now should see "iCalendar to Event". Click there once again on Edit which should get you to the iCalendar to Event page with the page_id already filled in under Advanced Options.</p>
 
-<h4>Misc.</h4>
-<ul>
-<li>Don't add a calendar with lots of event, remove it again, add it again etc. Facebook imposes certain <a href="http://www.facebook.com/help/?page=421" target="_blank">limits</a> and they don't like adding/removing lots of event too fast.</li>
+<h4>Miscellaneous</h4>
+<ul class="list">
+<li>Don't add a calendar with lots of event, remove it again, add it again etc. Facebook imposes certain <a href="http://www.facebook.com/help/?page=1052" target="_blank">limits</a> and they don't like adding/removing lots of event too fast.</li>
 <li>If you change events in the ical file the facebook events will get updated but not the other way around.</li>
+<li>New events are usually created every three hours or so.</li>
 <li>When editing a subscription, and you selected <i>Wall</i>, even if you choose <i>Update also existing events</i> there will be no wall posts created for old events.</li>
-<li>Internet Explorer might have some problems with this app. Get a decent browser like <a href="http://www.getfirefox.com">Firefox</a>.</li>
+<li>Internet Explorer might have some problems with this app. Get a decent browser like <a href="http://www.getfirefox.com">Firefox</a> or <a href="http://www.google.com/chrome/">Chrome</a>.</li>
 </ul>
 
 <br/>

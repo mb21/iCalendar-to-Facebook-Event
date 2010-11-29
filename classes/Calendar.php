@@ -284,6 +284,7 @@ class Calendar {
 			$sub_data['wall'] = FALSE;
 
 		//check url
+		$sub_data['url'] = trim($sub_data['url']);
 		$urlregex = '/^(https?|ftp):\/\/(\S*)\Z/';
 		if (! preg_match($urlregex, $sub_data['url']) ) {
 			echo '{ "msg":"<div class=\'clean-error\'>URL doesn\'t have correct form. Please include http:// etc.</div>"}';

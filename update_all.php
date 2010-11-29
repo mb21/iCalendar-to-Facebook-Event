@@ -47,31 +47,68 @@ ignore_user_abort(true);
 $execution_time = time();
 
 
+/////////////////////////////////
+// BLACKLIST of SUBIDS
+$blacklist = array(2473, 170, 171);
+/////////////////////////////////
+
 //update all
 $result = mysql_query("SELECT * FROM subscriptions") or trigger_error(mysql_error());
+$half = (int) (mysql_num_rows($result) / 2);
+
+
+if ($argv[1] == 0){
+	//command line argument was 0 -> update the first half of subscriptions
+	$result = mysql_query("SELECT * FROM subscriptions LIMIT 0, $half") or trigger_error(mysql_error());
+}
+else{
+	//command line argument was 1 -> update the second half of subscriptions
+	$length = $half + 10;
+	$result = mysql_query("SELECT * FROM subscriptions LIMIT $half, $length") or trigger_error(mysql_error());
+}
 
 $numb_events = 0;
 $numb_subs = 0;
+$numb_file_too_large_errors = 0;
 $numb_valid_file_errors = 0;
 $numb_session_key_errors = 0;
 $numb_session_key_in_db_errors = 0;
 $numb_perms_errors = 0;
+$numb_subs_with_an_error = 0;
 
 while($row = mysql_fetch_assoc($result)) {
+	$sub_id = $row['sub_id'];
 	try {
+		/////////////////////////////////
+		//write to log what file was last tryed (maybe before fatal error)
+		//$file = "trying.txt";
+		//$fh = fopen($file, 'a') or die("can't open file");
+		//$write = "mem_usage: " . memory_get_usage() . " " . date("r") . " sub_id: " . $row['sub_id'] . "\r\n" ;
+		//fwrite($fh, $write);
+		//fclose($fh);
+		/////////////////////////////////
+		
 		$numb_subs++;
-		$calendar  = new Calendar(NULL, $row);
-		$newevs = $calendar->update();
-		$numb_events = $numb_events + $newevs;
+		
+		if ( !in_array($sub_id, $blacklist) ){
+			$calendar  = new Calendar(NULL, $row);
+			$newevs = $calendar->update();
+			$numb_events = $numb_events + $newevs;
+		}
 	}catch(Exception $e) {
-		$error = $e->getMessage().' Error code:'.$e->getCode()." in ".$e->getFile()." Line:".$e->getLine();
-		echo $error;
+		$error = $e->getMessage().'<br/>Error code: '.$e->getCode()."<br/>in file: ".$e->getFile()."<br/>on line:".$e->getLine();
+		echo $error; //is caught below by buffer and written into database
 	}
 
 	$buffer = ob_get_contents();
 	ob_clean();
 
 	if (!empty($buffer)){
+		$numb_subs_with_an_error++;
+		
+		$pos = strpos($buffer, "iCalendar file too large");
+		if(!($pos === FALSE))
+			$numb_file_too_large_errors++;
 		$pos = strpos($buffer, "Error when parsing file");
 		if(!($pos === FALSE))
 			$numb_valid_file_errors++;
@@ -85,8 +122,7 @@ while($row = mysql_fetch_assoc($result)) {
 		if(!($pos === FALSE))
 			$numb_perms_errors++;
 
-		$buffer = mysql_real_escape_string(date('c')." ".$buffer);
-		$sub_id = $row['sub_id'];
+		$buffer = mysql_real_escape_string(date('r')."<br/>".$buffer);
 		mysql_query("UPDATE subscriptions SET error_log='$buffer' WHERE sub_id='$sub_id'");
 	}
 }
@@ -111,11 +147,13 @@ if ($s) $str .= $s . 's';
 
 $execution_time = $str;
 
-$file = "log.html";
+$file = "log_". $argv[1] .".html";
 $fh = fopen($file, 'w') or die("can't open file");
 fwrite($fh, "<html><body><h3>Time update_all.php run last time completely: ".date('d.m.o H:s e')."</h3>
 	<p>".$numb_subs." subscriptions checked, ". $numb_events . " events created or updated.</p>
+	<p>".$numb_subs_with_an_error." subscriptions that have thrown an error.</p>
 	<ul>
+		<li>File too large: ".$numb_file_too_large_errors."</li>
 		<li>File invalid/parse error: ".$numb_valid_file_errors."</li>
 		<li>Session key invalid: ".$numb_session_key_errors."</li>
 		<li>No session key in db: ".$numb_session_key_in_db_errors."</li>

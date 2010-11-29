@@ -1245,7 +1245,8 @@ class vcalendar {
 				"Connection: Close\r\n\r\n");
 
 			// retrieve the response from the remote server
-			while ( $line = fread( $fp, 4096 ) ) {
+			// note: fread( $fp, max-number-of-bytes-to-read)
+			while ( $line = fread( $fp, 1024 ) ) {
 				$response .= $line;
 			}
 
@@ -1255,9 +1256,6 @@ class vcalendar {
 			$pos      = mb_strpos($response, "\r\n\r\n");
 			$response = mb_substr($response, $pos + 4);
 		}
-
-
-
 
 		// split the file content in an array by lines
 		$fileArray = preg_split("/" . $this->nl ."/", $response);
