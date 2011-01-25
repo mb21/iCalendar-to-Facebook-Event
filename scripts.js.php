@@ -47,6 +47,12 @@ if(0) { ?><script type="text/javascript"><?php } ?>
 		var sub_name = document.createElement('td');
 		row.appendChild(sub_name);
 		sub_name.setInnerXHTML("<h3 title='"+ json_sub.url +"'>" + json_sub.sub_name + "</h3>");
+		
+		var active = document.createElement('td');
+		row.appendChild(active);
+		if (json_sub.active == 0){
+			active.setInnerXHTML("<div class='reactivate-box'><p>This subscription has been deactivated because it isn't working properly. If you think the problem has been fixed you can <a href='<?php echo _SITE_URL;?>reactivate.php?sub_id=" + json_sub.sub_id + "'>reactivate it by clicking this link</a>. (<a href='<?php echo _SITE_URL;?>Docs.php'>More Info...</a>)</p></div>");
+		}
 
 		var category = document.createElement('td');
 		row.appendChild(category);

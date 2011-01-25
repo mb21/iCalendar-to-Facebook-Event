@@ -331,7 +331,7 @@ if (isset($_GET['category'])) {
 <!-- SUBSCRIPTIONS TABLE-->
 <div id="subscriptions">
 	<table id="subscription_table"><tbody>
-			<tr class="table_heading"><th class="name"><h3>Subscription Name</h3></th><th class="tb_category">Category</th><th class="tb_subcategory">Subcategory</th><th class="tb_group">Group/Page</th><th class="edit"></th><th class="remove"></th></tr>
+			<tr class="table_heading"><th class="name"><h3>Subscription Name</h3></th><th class="active"></th><th class="tb_category">Category</th><th class="tb_subcategory">Subcategory</th><th class="tb_group">Group/Page</th><th class="edit"></th><th class="remove"></th></tr>
 
 
 		</tbody>
@@ -361,6 +361,14 @@ if (mysql_num_rows($result) > 0) {
 	//-->
 </script>
 
-<p>If something is not working as expected, you might want to check your <a href="<?php echo _SITE_URL;?>display_error_log.php">error log</a>.</p>
+<p>Have a look at the <a href="<?php echo _SITE_URL;?>Docs.php">documentation</a> for more information or if something is not working as expected, you might want to check your <a href="<?php echo _SITE_URL;?>display_error_log.php">error log</a>.</p>
+<p>I'm working on this app in my spare time and running it on my private server. Please feel free to donate some money. Thank you!</p>
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----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-----END PKCS7-----
+">
+<input type="image" src="https://www.paypal.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+<img alt="" border="0" src="https://www.paypal.com/en_US/i/scr/pixel.gif" width="1" height="1">
+</form>
 <br/>
 <?php mysql_close($con); ?>

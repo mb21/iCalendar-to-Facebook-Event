@@ -48,23 +48,27 @@ $execution_time = time();
 
 
 /////////////////////////////////
-// BLACKLIST of SUBIDS
-$blacklist = array(2473, 170, 171);
+// CONFIG
+//$argv[1] = 1;
+$log_file = false;
+$blacklist = array(2473, 170, 171, 2700, 3011, 3115);
 /////////////////////////////////
 
-//update all
-$result = mysql_query("SELECT * FROM subscriptions") or trigger_error(mysql_error());
-$half = (int) (mysql_num_rows($result) / 2);
+//this job is run with argument 0 on hours 0,4,8,12,16,20
+//this job is run with argument 1 on hours 2,6,10,14,18,22
 
+//update all
+$result = mysql_query("SELECT * FROM subscriptions WHERE active > 0") or trigger_error(mysql_error());
+$half = (int) (mysql_num_rows($result) / 2);
 
 if ($argv[1] == 0){
 	//command line argument was 0 -> update the first half of subscriptions
-	$result = mysql_query("SELECT * FROM subscriptions LIMIT 0, $half") or trigger_error(mysql_error());
+	$result = mysql_query("SELECT * FROM subscriptions WHERE active > 0 LIMIT 0, $half") or trigger_error(mysql_error());
 }
 else{
 	//command line argument was 1 -> update the second half of subscriptions
 	$length = $half + 10;
-	$result = mysql_query("SELECT * FROM subscriptions LIMIT $half, $length") or trigger_error(mysql_error());
+	$result = mysql_query("SELECT * FROM subscriptions WHERE active > 0 LIMIT $half, $length") or trigger_error(mysql_error());
 }
 
 $numb_events = 0;
@@ -79,15 +83,17 @@ $numb_subs_with_an_error = 0;
 while($row = mysql_fetch_assoc($result)) {
 	$sub_id = $row['sub_id'];
 	try {
-		/////////////////////////////////
-		//write to log what file was last tryed (maybe before fatal error)
-		//$file = "trying.txt";
-		//$fh = fopen($file, 'a') or die("can't open file");
-		//$write = "mem_usage: " . memory_get_usage() . " " . date("r") . " sub_id: " . $row['sub_id'] . "\r\n" ;
-		//fwrite($fh, $write);
-		//fclose($fh);
-		/////////////////////////////////
-		
+		if ($log_file){
+			//write to log what file was last tryed (maybe before fatal error)
+			$running = (int) ((time() - $execution_time) / 60);
+			
+			$file = "trying.txt";
+			$fh = fopen($file, 'a') or die("can't open file"); //append
+			$write = "mem_usage: " . memory_get_usage() . " " . date("r") . " sub_id: " . $row['sub_id'] . " - running for " . $running . "min \r\n" ;
+			fwrite($fh, $write);
+			fclose($fh);
+		}
+				
 		$numb_subs++;
 		
 		if ( !in_array($sub_id, $blacklist) ){
@@ -95,8 +101,13 @@ while($row = mysql_fetch_assoc($result)) {
 			$newevs = $calendar->update();
 			$numb_events = $numb_events + $newevs;
 		}
+		
+		//log successful update
+		$time_now = time();
+		mysql_query("UPDATE subscriptions set last_successful_update = '$time_now' WHERE sub_id = $sub_id");
+		
 	}catch(Exception $e) {
-		$error = $e->getMessage().'<br/>Error code: '.$e->getCode()."<br/>in file: ".$e->getFile()."<br/>on line:".$e->getLine();
+		$error = '<strong>'.$e->getMessage().'</strong><br/>Error code:'.$e->getCode()."<br/>File:".$e->getFile()."<br/>Line:".$e->getLine()."<br/>Trace: ".$e->getTraceAsString();
 		echo $error; //is caught below by buffer and written into database
 	}
 
@@ -146,6 +157,15 @@ if ($m) $str .= $m . 'm ';
 if ($s) $str .= $s . 's';
 
 $execution_time = $str;
+
+if ($log_file){
+	//write to log that we are done
+	$file = "trying.txt";
+	$fh = fopen($file, 'a') or die("can't open file"); //append
+	$write = "done in " . $execution_time . "\r\n" ;
+	fwrite($fh, $write);
+	fclose($fh);
+}
 
 $file = "log_". $argv[1] .".html";
 $fh = fopen($file, 'w') or die("can't open file");

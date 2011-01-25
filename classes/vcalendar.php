@@ -1245,17 +1245,22 @@ class vcalendar {
 				"Connection: Close\r\n\r\n");
 
 			// retrieve the response from the remote server
-			// note: fread( $fp, max-number-of-bytes-to-read)
 			while ( $line = fread( $fp, 1024 ) ) {
 				$response .= $line;
 			}
-
+			if (strlen($response) > 1000000){
+				throw new Exception("iCalendar file too large.");
+			}
+			
 			fclose( $fp );
 
 			// strip the headers
 			$pos      = mb_strpos($response, "\r\n\r\n");
 			$response = mb_substr($response, $pos + 4);
 		}
+
+
+
 
 		// split the file content in an array by lines
 		$fileArray = preg_split("/" . $this->nl ."/", $response);

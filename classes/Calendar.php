@@ -138,8 +138,12 @@ class Calendar {
 						$event_obj = new Event($event,$this);
 
 						// edit facebook event
-						if (FALSE === ($status = $event_obj->update_to_fb($event_id)) )
-							throw new Exception("Could not update event " . $event_id);
+						try{
+							$status = $event_obj->update_to_fb($event_id);
+						}catch(Exception $e) {
+							// or if($status != 1)
+							// throw new Exception("Could not update event " . $event_id);
+						}
 
 						if ($status == 1) {
 							//if successfull
