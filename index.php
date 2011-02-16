@@ -51,7 +51,12 @@ echo "</script></head>";
 
 
 //whether offline_access and create_event permissions are set
-$perms = $facebook->api_client->users_hasAppPermission('offline_access') && $facebook->api_client->users_hasAppPermission('create_event');
+try{
+	$perms = $facebook->api_client->users_hasAppPermission('offline_access') && $facebook->api_client->users_hasAppPermission('create_event');
+}
+catch(Exception $e){
+	$perms = false;
+}
 
 //store session_key in db
 if (isset($_POST["fb_sig_session_key"]) && $perms) {
