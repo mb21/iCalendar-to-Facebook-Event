@@ -1,0 +1,4 @@
+1) fill in your configuration and rename configTEMPLATE.inc.php to config.inc.php
+2) run setup.sql on your SQL Database
+3) set permissions to write for your web server for the directories 'tmp' and 'tmp/images'
+4) make sure you're running PHP 5.3 or later on both the php command and in the web server
