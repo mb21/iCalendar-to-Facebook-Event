@@ -732,7 +732,7 @@ abstract class BaseFacebook
       $this->getUrl('graph', $path),
       $params
     ), true);
-
+    
     // results are returned, errors are thrown
     if (is_array($result) && isset($result['error'])) {
       $this->throwAPIException($result);
@@ -761,7 +761,7 @@ abstract class BaseFacebook
         $params[$key] = json_encode($value);
       }
     }
-
+    
     return $this->makeRequest($url, $params);
   }
 
@@ -799,8 +799,22 @@ abstract class BaseFacebook
       $opts[CURLOPT_HTTPHEADER] = array('Expect:');
     }
 
+    echo '<pre>';
+    var_dump($result);
+    unset($opts["10015"]["page_id"]);
+    unset($opts["10015"]["privacy_type"]);
+    unset($opts["10015"]["location"]);
+    unset($opts["10015"]["method"]);
+    unset($opts["10015"]["access_token"]);
+    var_dump($opts);
+    
+    echo '</pre>';
+    //die();
     curl_setopt_array($ch, $opts);
     $result = curl_exec($ch);
+
+    var_dump($result);
+    die();
 
     if (curl_errno($ch) == 60) { // CURLE_SSL_CACERT
       self::errorLog('Invalid or no certificate authority found, '.
@@ -822,6 +836,7 @@ abstract class BaseFacebook
       throw $e;
     }
     curl_close($ch);
+    
     return $result;
   }
 
