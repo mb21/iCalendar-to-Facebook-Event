@@ -776,6 +776,23 @@ abstract class BaseFacebook
    *
    * @return string The response text
    */
+/*
+  protected function makeRequest($url, $params, $ch=null) {
+      if (!$ch) {
+          $ch = curl_init();
+      }
+
+      $opts = self::$CURL_OPTS;
+      curl_setopt($ch, CURLOPT_URL ,$url);
+      curl_setopt($ch, CURLOPT_POST, 1);
+      curl_setopt($ch, CURLOPT_POSTFIELDS,
+                  http_build_query(array()));
+      var_dump($params);
+      die();
+
+  }
+*/
+
   protected function makeRequest($url, $params, $ch=null) {
     if (!$ch) {
       $ch = curl_init();
@@ -799,22 +816,15 @@ abstract class BaseFacebook
       $opts[CURLOPT_HTTPHEADER] = array('Expect:');
     }
 
-    echo '<pre>';
-    var_dump($result);
-    unset($opts["10015"]["page_id"]);
-    unset($opts["10015"]["privacy_type"]);
-    unset($opts["10015"]["location"]);
-    unset($opts["10015"]["method"]);
-    unset($opts["10015"]["access_token"]);
-    var_dump($opts);
+    var_dump($opts[CURLOPT_URL]);
+
+    if (isset($opts["10015"]["start_time"]))
+        $opts["10015"]["start_time"] = $iso8601 = date('c', $opts["10015"]["start_time"]);
+    if (isset($opts["10015"]["end_time"]))
+        $opts["10015"]["end_time"] = $iso8601 = date('c', $opts["10015"]["end_time"]);
     
-    echo '</pre>';
-    //die();
     curl_setopt_array($ch, $opts);
     $result = curl_exec($ch);
-
-    var_dump($result);
-    die();
 
     if (curl_errno($ch) == 60) { // CURLE_SSL_CACERT
       self::errorLog('Invalid or no certificate authority found, '.
