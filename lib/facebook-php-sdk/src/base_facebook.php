@@ -776,22 +776,6 @@ abstract class BaseFacebook
    *
    * @return string The response text
    */
-/*
-  protected function makeRequest($url, $params, $ch=null) {
-      if (!$ch) {
-          $ch = curl_init();
-      }
-
-      $opts = self::$CURL_OPTS;
-      curl_setopt($ch, CURLOPT_URL ,$url);
-      curl_setopt($ch, CURLOPT_POST, 1);
-      curl_setopt($ch, CURLOPT_POSTFIELDS,
-                  http_build_query(array()));
-      var_dump($params);
-      die();
-
-  }
-*/
 
   protected function makeRequest($url, $params, $ch=null) {
     if (!$ch) {
@@ -816,12 +800,11 @@ abstract class BaseFacebook
       $opts[CURLOPT_HTTPHEADER] = array('Expect:');
     }
 
-    var_dump($opts[CURLOPT_URL]);
-
-    if (isset($opts["10015"]["start_time"]))
-        $opts["10015"]["start_time"] = $iso8601 = date('c', $opts["10015"]["start_time"]);
-    if (isset($opts["10015"]["end_time"]))
-        $opts["10015"]["end_time"] = $iso8601 = date('c', $opts["10015"]["end_time"]);
+    /* Convert unix timestamp to ISO 8601 */
+    if (isset($opts[CURLOPT_POSTFIELDS]["start_time"]))
+        $opts[CURLOPT_POSTFIELDS]["start_time"] = date('c', $opts[CURLOPT_POSTFIELDS]["start_time"]);
+    if (isset($opts[CURLOPT_POSTFIELDS]["end_time"]))
+        $opts[CURLOPT_POSTFIELDS]["end_time"] = date('c', $opts[CURLOPT_POSTFIELDS]["end_time"]);
     
     curl_setopt_array($ch, $opts);
     $result = curl_exec($ch);
