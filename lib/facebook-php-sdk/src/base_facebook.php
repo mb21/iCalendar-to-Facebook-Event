@@ -193,6 +193,11 @@ abstract class BaseFacebook
   protected $accessToken = null;
 
   /**
+   * If true the event creation will not be posted on the wall.
+   */
+  protected $silentPosting;
+
+  /**
    * Indicates if the CURL based @ syntax for file uploads is enabled.
    *
    * @var boolean
@@ -210,6 +215,7 @@ abstract class BaseFacebook
    * @param array $config The application configuration
    */
   public function __construct($config) {
+    $this->setSilentPosting($config['silentEvent']);
     $this->setAppId($config['appId']);
     $this->setApiSecret($config['secret']);
     if (isset($config['fileUpload'])) {
@@ -231,6 +237,11 @@ abstract class BaseFacebook
   public function setAppId($appId) {
     $this->appId = $appId;
     return $this;
+  }
+
+  public function setSilentPosting($silent) {
+      $this->silentPosting = $silent;
+      return $this;
   }
 
   /**
@@ -803,8 +814,11 @@ abstract class BaseFacebook
     /* Convert unix timestamp to ISO 8601 */
     if (isset($opts[CURLOPT_POSTFIELDS]["start_time"]))
         $opts[CURLOPT_POSTFIELDS]["start_time"] = date('c', $opts[CURLOPT_POSTFIELDS]["start_time"]);
+    
     if (isset($opts[CURLOPT_POSTFIELDS]["end_time"]))
         $opts[CURLOPT_POSTFIELDS]["end_time"] = date('c', $opts[CURLOPT_POSTFIELDS]["end_time"]);
+
+    $opts[CURLOPT_POSTFIELDS]["no_feed_story"] = 1;
     
     curl_setopt_array($ch, $opts);
     $result = curl_exec($ch);
